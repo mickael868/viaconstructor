@@ -2879,7 +2879,7 @@ class ViaConstructor:  # pylint: disable=R0904
             )
             threading.Thread(target=openscad_convert).start()
 
-    def __init__(self) -> None:
+    def __init__(self, direct_args=[]) -> None:
         """viaconstructor main init."""
         debug("main: startup")
         setproctitle.setproctitle("viaconstructor")  # pylint: disable=I1101
@@ -2927,7 +2927,7 @@ class ViaConstructor:  # pylint: disable=R0904
         for reader_plugin in reader_plugins.values():
             reader_plugin.arg_parser(parser)
 
-        self.args = parser.parse_args()
+        self.args = parser.parse_args(direct_args)
         self.project["engine"] = self.args.engine
 
         # load setup
@@ -2955,24 +2955,24 @@ class ViaConstructor:  # pylint: disable=R0904
                 self.update_drawing()
                 eprint(f"saving dawing to file: {self.args.dxf}")
                 self.save_objects_as_dxf(self.args.dxf)
-                sys.exit(0)
+                return
             if self.args.output:
                 self.update_drawing()
                 eprint(f"saving machine_cmd to file: {self.args.output}")
                 open(self.args.output, "w").write(self.project["machine_cmd"])
-                sys.exit(0)
+                return
         elif self.args.filename and self.load_drawing(self.args.filename):
             # save and exit
             if self.args.dxf:
                 self.update_drawing()
                 eprint(f"saving dawing to file: {self.args.dxf}")
                 self.save_objects_as_dxf(self.args.dxf)
-                sys.exit(0)
+                return
             if self.args.output:
                 self.update_drawing()
                 eprint(f"saving machine_cmd to file: {self.args.output}")
                 open(self.args.output, "w").write(self.project["machine_cmd"])
-                sys.exit(0)
+                return
 
         # gui #
         debug("main: load gui")
