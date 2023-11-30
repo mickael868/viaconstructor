@@ -19,6 +19,7 @@ except Exception:  # pylint: disable=W0703
 
 from .ext.cavaliercontours import cavaliercontours as cavc
 from .vc_types import VcObject
+from .log import *
 
 TWO_PI = math.pi * 2
 
@@ -372,7 +373,7 @@ def find_tool_offsets(objects):
         obj["inner_objects"] = []
 
     for obj_idx, obj in objects.items():
-        print(f"set offsets: {round((part_n + 1) * 100 / part_l, 1)}%", end="\r")
+        log_dbg(f"set offsets: {round((part_n + 1) * 100 / part_l, 1)}%", end="\r")
         part_n += 1
 
         outer = find_outer_objects(objects, obj.segments[0].start, [obj_idx])
@@ -391,7 +392,7 @@ def find_tool_offsets(objects):
 
         for outer_idx in outer:
             objects[outer_idx]["inner_objects"].append(obj_idx)
-    print("")
+    log_dbg("")
 
     return max_outer
 
@@ -419,7 +420,7 @@ def segments2objects(segments):
         part_n = part_l - num_unused_segments(test_segments)
         percent = round((part_n + 1) * 100 / part_l, 1)
         if int(percent) != int(last_percent):
-            print(f"combining segments: {percent}%", end="\r")
+            log_dbg(f"combining segments: {percent}%", end="\r")
         last_percent = int(percent)
 
         # create new object
@@ -520,7 +521,7 @@ def segments2objects(segments):
 
         if not found:
             break
-    print("")
+    log_dbg("")
     return objects
 
 
@@ -1273,7 +1274,7 @@ def objects2polyline_offsets(setup, objects, max_outer):
                 continue
             percent = round((part_n + 1) * 100 / part_l, 1)
             if int(percent) != int(last_percent):
-                print(f"calc offset path: {percent}%", end="\r")
+                log_dbg(f"calc offset path: {percent}%", end="\r")
             last_percent = int(percent)
             part_n += 1
 
@@ -1282,7 +1283,7 @@ def objects2polyline_offsets(setup, objects, max_outer):
                 if obj.setup["tool"]["number"] == entry["number"]:
                     diameter = entry["diameter"]
             if diameter is None:
-                print("ERROR: TOOL not found")
+                log_error("TOOL not found")
                 break
 
             if unit == "inch":
@@ -1303,7 +1304,7 @@ def objects2polyline_offsets(setup, objects, max_outer):
                 diameter, obj_copy, obj_idx, max_outer, polyline_offsets, small_circles
             )
 
-    print("")
+    log_dbg("")
     return polyline_offsets
 
 

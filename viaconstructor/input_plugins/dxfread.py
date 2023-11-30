@@ -17,22 +17,23 @@ from ..calc import (  # pylint: disable=E0402
 from ..dxfcolors import dxfcolors
 from ..input_plugins_base import DrawReaderBase
 from ..vc_types import VcSegment
+from ..log import *
 
 try:
     from ezdxf.addons import MTextExplode
     from ezdxf.path import Command, make_path
-    from ezdxf.tools import fonts
+    from ezdxf.fonts import fonts
 
     try:
         from ezdxf.addons import text2path
 
         SUPPORT_TEXT = True
     except Exception as error:  # pylint: disable=W0703
-        print(f"WARNING: for text support, please install matplotlib: {error}")
+        log_warn(f"for text support, please install matplotlib: {error}")
         SUPPORT_TEXT = False
 
 except Exception as error:  # pylint: disable=W0703
-    print(f"WARNING: please install newer version of ezdxf: {error}")
+    log_warn(f"please install newer version of ezdxf: {error}")
     SUPPORT_TEXT = False
 
 BITMAP_FORMATS = ("bmp", "png", "gif", "jpg", "jpeg")
@@ -158,8 +159,8 @@ class DrawReader(DrawReaderBase):
         if self.filename.lower().endswith(".svg") and os.path.isfile(
             "/usr/share/inkscape/extensions/dxf_outlines.py"
         ):
-            print("INFO: converting svg to dxf with inkscape")
-            print("    you can disable this with: --dxfread-no-svg")
+            log_info("converting svg to dxf with inkscape")
+            log_info("    you can disable this with: --dxfread-no-svg")
             _fd, tmp_path = tempfile.mkstemp()
             os.system(
                 f"cd /usr/share/inkscape/extensions/ ; python3 dxf_outlines.py --output='{tmp_path}' '{os.path.realpath(self.filename)}'"
@@ -167,8 +168,8 @@ class DrawReader(DrawReaderBase):
             self.doc = ezdxf.readfile(tmp_path)
             os.remove(tmp_path)
         elif self.filename.lower().endswith(BITMAP_FORMATS) and potrace:
-            print("INFO: converting bitmap to dxf with potrace")
-            print("    you can disable this with: --dxfread-no-bmp")
+            log_info("converting bitmap to dxf with potrace")
+            log_info("    you can disable this with: --dxfread-no-bmp")
             _fd, tmp_path = tempfile.mkstemp()
 
             if not self.filename.lower().endswith(".bmp"):
@@ -193,8 +194,8 @@ class DrawReader(DrawReaderBase):
                 if self.doc.units != 0:
                     self.scale = ezdxf.units.conversion_factor(self.doc.units, ezdxf.units.MM)  # type: ignore
             except Exception as error:  # pylint: disable=W0703,W0621
-                print("UNKNOWN UNITS")
-                print(f"WARNING: please install newer version of ezdxf: {error}")
+                log_warn("UNKNOWN UNITS")
+                log_warn(f"please install newer version of ezdxf: {error}")
         else:
             self.scale = args.dxfread_scale
 
@@ -222,11 +223,11 @@ class DrawReader(DrawReaderBase):
                     else:
                         xpl.explode(mtext)
         except Exception as error:  # pylint: disable=W0703
-            print(f"WARNING: can not explore MText: {error}")
+            log_warn(f"can not explore MText: {error}")
 
         part_l = len(self.model_space)
         for part_n, element in enumerate(self.model_space):
-            print(f"loading file: {round((part_n + 1) * 100 / part_l, 1)}%", end="\r")
+            log_dbg(f"loading file: {round((part_n + 1) * 100 / part_l, 1)}%", end="\r")
             if element.dxf.layer == "_CAMCFG":
                 continue
             dxftype = element.dxftype()
@@ -235,7 +236,7 @@ class DrawReader(DrawReaderBase):
                     self.add_entity(v_element)
             else:
                 self.add_entity(element)
-        print("")
+        log_dbg("")
 
         self.min_max = [0.0, 0.0, 10.0, 10.0]
         for seg_idx, segment in enumerate(self.segments):
@@ -256,9 +257,9 @@ class DrawReader(DrawReaderBase):
         self.size.append(self.min_max[3] - self.min_max[1])
 
         if self.filtered_layers:
-            print(f"dxfread: filtered layers: {', '.join(self.filtered_layers)}")
+            log_info(f"dxfread: filtered layers: {', '.join(self.filtered_layers)}")
         if self.selected_layers:
-            print(f"dxfread: selected layers: {', '.join(self.selected_layers)}")
+            log_info(f"dxfread: selected layers: {', '.join(self.selected_layers)}")
 
     def add_entity(self, element, offset: tuple = (0, 0)):
         dxftype = element.dxftype()
@@ -426,11 +427,11 @@ class DrawReader(DrawReaderBase):
                     )
 
         else:
-            print("UNSUPPORTED TYPE: ", dxftype)
+            log_warn("UNSUPPORTED TYPE: ", dxftype)
             for attrib in element.__dict__:
-                print(f"  element.{attrib} = {getattr(element, attrib)}")
+                log_warn(f"  element.{attrib} = {getattr(element, attrib)}")
             for attrib in element.dxf.__dict__:
-                print(f"  element.dxf.{attrib} = {getattr(element.dxf, attrib)}")
+                log_warn(f"  element.dxf.{attrib} = {getattr(element.dxf, attrib)}")
 
     def _add_path(self, path, offset, pscale=1.0, layer="0", color=256) -> list[float]:
         last = path.start
@@ -530,7 +531,7 @@ class DrawReader(DrawReaderBase):
                     last = point
                 last = point
             else:
-                print(f"dxfread: unknown path command {command.type}")
+                log_warn(f"dxfread: unknown path command {command.type}")
         return last
 
     def save_tabs(self, tabs: list) -> None:
@@ -540,7 +541,7 @@ class DrawReader(DrawReaderBase):
                 shutil.copy2(self.filename, f"{self.filename}.{int(time.time())}")
                 self.backup_ok = True
             except Exception as error:  # pylint: disable=W0703,W0621
-                print(f"ERROR: can not make backup of file: {self.filename}: {error}")
+                log_error(f"can not make backup of file: {self.filename}: {error}")
                 return
 
         delete_layers = []
@@ -563,8 +564,8 @@ class DrawReader(DrawReaderBase):
         try:
             self.doc.saveas(self.filename)
         except Exception as save_error:  # pylint: disable=W0703
-            print(
-                f"ERROR while saving tabs to dxf file ({self.filename}): {save_error}"
+            log_error(
+                f"while saving tabs to dxf file ({self.filename}): {save_error}"
             )
 
     def save_starts(self, objects: dict) -> None:
@@ -574,7 +575,7 @@ class DrawReader(DrawReaderBase):
                 shutil.copy2(self.filename, f"/{self.filename}.{int(time.time())}")
                 self.backup_ok = True
             except Exception as error:  # pylint: disable=W0703,W0621
-                print(f"ERROR: can not make backup of file: {self.filename}: {error}")
+                log_error(f"can not make backup of file: {self.filename}: {error}")
                 return
 
         delete_layers = []
@@ -598,8 +599,8 @@ class DrawReader(DrawReaderBase):
         try:
             self.doc.saveas(self.filename)
         except Exception as save_error:  # pylint: disable=W0703
-            print(
-                f"ERROR while saving tabs to dxf file ({self.filename}): {save_error}"
+            log_error(
+                f"while saving tabs to dxf file ({self.filename}): {save_error}"
             )
 
     def save_setup(self, setup: str) -> None:
@@ -609,7 +610,7 @@ class DrawReader(DrawReaderBase):
                 shutil.copy2(self.filename, f"{self.filename}.{int(time.time())}")
                 self.backup_ok = True
             except Exception as error:  # pylint: disable=W0703,W0621
-                print(f"ERROR: can not make backup of file: {self.filename}: {error}")
+                log_error(f"can not make backup of file: {self.filename}: {error}")
                 return
 
         delete_layers = []
@@ -632,8 +633,8 @@ class DrawReader(DrawReaderBase):
             self.doc.saveas(self.filename)
             self.cam_setup = setup
         except Exception as save_error:  # pylint: disable=W0703
-            print(
-                f"ERROR while saving setup to dxf file ({self.filename}): {save_error}"
+            log_error(
+                f"while saving setup to dxf file ({self.filename}): {save_error}"
             )
 
     @staticmethod

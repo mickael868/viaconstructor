@@ -81,6 +81,7 @@ from .output_plugins.gcode_linuxcnc import PostProcessorGcodeLinuxCNC
 from .output_plugins.hpgl import PostProcessorHpgl
 from .preview_plugins.gcode import GcodeParser
 from .setupdefaults import setup_defaults
+from .log import *
 
 try:
     from .ext.nest2D.nest2D import (  # pylint: disable=E0611
@@ -114,18 +115,14 @@ openscad = external_command("openscad")
 camotics = external_command("camotics")
 
 
-def eprint(message, *args, **kwargs):  # pylint: disable=W0613
-    sys.stderr.write(f"{message}\n")
-
-
 def debug(message):
     global TIMESTAMP  # pylint: disable=W0603
     if DEBUG:
         now = time.time()
         if TIMESTAMP == 0:
             TIMESTAMP = now
-        eprint(round(now - TIMESTAMP, 1))
-        eprint(f"{message} ", end="", flush=True)
+        log_dbg(round(now - TIMESTAMP, 1))
+        log_dbg(f"{message} ", end="", flush=True)
         TIMESTAMP = now
 
 
@@ -240,7 +237,7 @@ class ViaConstructor:  # pylint: disable=R0904
                 ezdxf.zoom.extents(msp)  # type: ignore
             doc.saveas(output_file)
         except Exception as error:  # pylint: disable=W0703
-            eprint(f"ERROR while saving dxf: {error}")
+            log_error(f"while saving dxf: {error}")
             return False
 
         return True
@@ -317,7 +314,7 @@ class ViaConstructor:  # pylint: disable=R0904
             self.project["suffix"] = output_plugin.suffix()
             self.project["axis"] = output_plugin.axis()
         else:
-            eprint(
+            log_dbg(
                 f"ERROR: Unknown machine output plugin: {self.project['setup']['machine']['plugin']}"
             )
             sys.exit(1)
@@ -359,7 +356,7 @@ class ViaConstructor:  # pylint: disable=R0904
             if self.project["setup"]["tool"]["number"] == entry["number"]:
                 diameter = entry["diameter"]
         if diameter is None:
-            print("ERROR: nest: TOOL not found")
+            log_error("nest: TOOL not found")
             return
 
         obj_dist = max(diameter * 3, 1.0)
@@ -386,7 +383,7 @@ class ViaConstructor:  # pylint: disable=R0904
                 itemdata.reverse()
                 item = Item(itemdata)
                 mapping[obj_idx] = item
-                # print("########## add", item, item.area)
+                # log_dbg("########## add", item, item.area)
                 items.append(item)
 
         min_max = objects2minmax(self.project["objects"])
@@ -396,13 +393,13 @@ class ViaConstructor:  # pylint: disable=R0904
         pgrp = nest(items, box, int(obj_dist * int_scale))
 
         svg_writer = SVGWriter()
-        # print("## pgrp ##", len(pgrp), pgrp)
+        # log_dbg("## pgrp ##", len(pgrp), pgrp)
         svg_writer.write_packgroup(pgrp)
         svg_writer.save()
 
         for igrp in pgrp:
             for item in igrp:
-                # print("item:", item)
+                # log_dbg("item:", item)
                 for key, value in mapping.items():
                     if value.area == item.area:
                         obj_data = self.project["objects"][key]
@@ -525,7 +522,7 @@ class ViaConstructor:  # pylint: disable=R0904
             fd_machine_cmd.write("\n")
             if self.project["setup"]["machine"]["postcommand"]:
                 cmd = f"{self.project['setup']['machine']['postcommand']} '{filename}'"
-                eprint(f"executing postcommand: {cmd}")
+                log_dbg(f"executing postcommand: {cmd}")
                 os.system(f"{cmd} &")
             return True
         return False
@@ -534,7 +531,7 @@ class ViaConstructor:  # pylint: disable=R0904
         if self.status_bar:
             self.status_bar.showMessage(message)
         else:
-            eprint(f"STATUS: {message}")
+            log_dbg(f"STATUS: {message}")
 
     def _toolbar_save_machine_cmd(self) -> None:
         """save machine_cmd."""
@@ -663,8 +660,9 @@ class ViaConstructor:  # pylint: disable=R0904
 
     def setup_load(self, filename: str) -> bool:
         if os.path.isfile(filename):
-            setup = open(filename, "r").read()
-            return self.setup_load_string(setup)
+            with open(filename, "r") as f:
+                setup = self.setup_load_string(f.read())
+            return setup
         return False
 
     def setup_save(self, filename: str) -> bool:
@@ -871,7 +869,7 @@ class ViaConstructor:  # pylint: disable=R0904
                 diameter = entry["diameter"]
                 blades = entry["blades"]
         if diameter is None:
-            print("ERROR: nest: TOOL not found")
+            log_error("nest: TOOL not found")
             return
 
         unit = self.project["setup"]["machine"]["unit"]
@@ -1057,7 +1055,7 @@ class ViaConstructor:  # pylint: disable=R0904
                         col_idx = 0
                         for key, col_type in entry["columns"].items():
                             if entry["widget_obj"].item(row_idx, col_idx + 1) is None:
-                                print("TABLE_ERROR")
+                                log_error("TABLE_ERROR")
                                 continue
                             if col_type["type"] == "str":
                                 value = (
@@ -1091,7 +1089,7 @@ class ViaConstructor:  # pylint: disable=R0904
                 elif entry["type"] == "color":
                     pass
                 else:
-                    eprint(f"Unknown setup-type: {entry['type']}")
+                    log_warn(f"Unknown setup-type: {entry['type']}")
                 if setup_data[sname][ename] != self.project["setup"][sname][ename]:
                     entry["widget_obj_label"].setStyleSheet("color: black")
                     changed_section = True
@@ -1137,7 +1135,7 @@ class ViaConstructor:  # pylint: disable=R0904
                         col_idx = 0
                         for key, col_type in entry["columns"].items():
                             if entry["widget"].item(row_idx, col_idx + 1) is None:
-                                print("TABLE_ERROR")
+                                log_error("TABLE_ERROR")
                                 continue
                             if col_type["type"] == "str":
                                 value = (
@@ -1173,7 +1171,7 @@ class ViaConstructor:  # pylint: disable=R0904
                 elif entry["type"] == "color":
                     pass
                 else:
-                    eprint(f"Unknown setup-type: {entry['type']}")
+                    log_dbg(f"Unknown setup-type: {entry['type']}")
 
         if self.project["setup"]["mill"]["step"] >= 0.0:
             self.project["setup"]["mill"]["step"] = -0.05
@@ -1360,7 +1358,7 @@ class ViaConstructor:  # pylint: disable=R0904
     def _toolbar_exit(self) -> None:
         """exit button."""
         if os.environ.get("LINUXCNCVERSION"):
-            print(self.project["machine_cmd"])
+            log_dbg(self.project["machine_cmd"])
         sys.exit(0)
 
     def create_actions(self) -> None:
@@ -1870,7 +1868,7 @@ class ViaConstructor:  # pylint: disable=R0904
                 elif entry["type"] == "color":
                     pass
                 else:
-                    eprint(f"Unknown setup-type: {entry['type']}")
+                    log_warn(f"Unknown setup-type: {entry['type']}")
 
     def create_global_setup(self, tabwidget) -> None:
         for sname in self.project["setup_defaults"]:
@@ -2011,7 +2009,7 @@ class ViaConstructor:  # pylint: disable=R0904
                     vlayout.addWidget(table)
                     entry["widget"] = table
                 else:
-                    eprint(f"Unknown setup-type: {entry['type']}")
+                    log_warn(f"Unknown setup-type: {entry['type']}")
 
                 unit = entry.get("unit", "")
                 if unit == "LINEARMEASURE":
@@ -2135,7 +2133,7 @@ class ViaConstructor:  # pylint: disable=R0904
                 elif entry["type"] == "color":
                     pass
                 else:
-                    eprint(f"Unknown setup-type: {entry['type']}")
+                    log_warn(f"Unknown setup-type: {entry['type']}")
 
             if changed_section:
                 self.tabobjwidget.setTabText(tab_idx, f">{titles.get(sname, sname)}<")
@@ -2289,7 +2287,7 @@ class ViaConstructor:  # pylint: disable=R0904
                     vlayout.addWidget(table)
                     entry["widget_obj"] = table
                 else:
-                    eprint(f"Unknown setup-type: {entry['type']}")
+                    log_warn(f"Unknown setup-type: {entry['type']}")
 
                 unit = entry.get("unit", "")
                 if unit == "LINEARMEASURE":
@@ -2758,7 +2756,7 @@ class ViaConstructor:  # pylint: disable=R0904
 
             return True
 
-        eprint(f"ERROR: can not load file: {filename}")
+        log_error(f"can not load file: {filename}")
         debug("load_drawing: error")
         return False
 
@@ -2771,7 +2769,7 @@ class ViaConstructor:  # pylint: disable=R0904
                 if self.project["setup"]["tool"]["number"] == entry["number"]:
                     diameter = entry["diameter"]
             if diameter is None:
-                print("ERROR: nest: TOOL not found")
+                log_error("nest: TOOL not found")
                 return
 
             scad_data = parser.openscad(diameter)
@@ -2806,7 +2804,7 @@ class ViaConstructor:  # pylint: disable=R0904
                     if obj.setup["tool"]["number"] == entry["number"]:
                         diameter = entry["diameter"]
                 if diameter is None:
-                    print("ERROR: nest: TOOL not found")
+                    log_error("nest: TOOL not found")
                     return
 
                 tools[obj.setup["tool"]["number"]] = {
@@ -2857,7 +2855,7 @@ class ViaConstructor:  # pylint: disable=R0904
                 if self.project["setup"]["tool"]["number"] == entry["number"]:
                     diameter = entry["diameter"]
             if diameter is None:
-                print("ERROR: nest: TOOL not found")
+                log_error("nest: TOOL not found")
                 return
 
             scad_data = parser.openscad(diameter)
@@ -2953,25 +2951,27 @@ class ViaConstructor:  # pylint: disable=R0904
             # save and exit
             if self.args.dxf:
                 self.update_drawing()
-                eprint(f"saving dawing to file: {self.args.dxf}")
+                log_dbg(f"saving dawing to file: {self.args.dxf}")
                 self.save_objects_as_dxf(self.args.dxf)
                 return
             if self.args.output:
                 self.update_drawing()
-                eprint(f"saving machine_cmd to file: {self.args.output}")
-                open(self.args.output, "w").write(self.project["machine_cmd"])
+                log_dbg(f"saving machine_cmd to file: {self.args.output}")
+                with open(self.args.output, "w") as f:
+                    f.write(self.project["machine_cmd"])
                 return
         elif self.args.filename and self.load_drawing(self.args.filename):
             # save and exit
             if self.args.dxf:
                 self.update_drawing()
-                eprint(f"saving dawing to file: {self.args.dxf}")
+                log_dbg(f"saving dawing to file: {self.args.dxf}")
                 self.save_objects_as_dxf(self.args.dxf)
                 return
             if self.args.output:
                 self.update_drawing()
-                eprint(f"saving machine_cmd to file: {self.args.output}")
-                open(self.args.output, "w").write(self.project["machine_cmd"])
+                log_dbg(f"saving machine_cmd to file: {self.args.output}")
+                with open(self.args.output, "w") as f:
+                    f.write(self.project["machine_cmd"])
                 return
 
         # gui #

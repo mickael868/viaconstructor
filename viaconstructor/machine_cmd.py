@@ -13,6 +13,7 @@ from .calc import (
     vertex2points,
     vertex_data_cache,
 )
+from .log import *
 
 TWO_PI = math.pi * 2.0
 HALF_PI = math.pi / 2.0
@@ -653,7 +654,7 @@ def polylines2machine_cmd(project: dict, post: PostProcessor) -> str:
                 if found:
                     percent = round((polylines_n + 1) * 100 / polylines_len, 1)
                     if int(percent) != int(last_percent):
-                        print(f"generating machine commands: {percent}%", end="\r")
+                        log_dbg(f"generating machine commands: {percent}%", end="\r")
                     last_percent = int(percent)
                     polylines_n += 1
 
@@ -716,7 +717,7 @@ def polylines2machine_cmd(project: dict, post: PostProcessor) -> str:
                         if polyline.setup["tool"]["number"] == entry["number"]:
                             diameter = entry["diameter"]
                     if diameter is None:
-                        print("ERROR: TOOL not found")
+                        log_error("TOOL not found")
                         break
 
                     if project["setup"]["machine"]["comments"]:
@@ -1057,5 +1058,5 @@ def polylines2machine_cmd(project: dict, post: PostProcessor) -> str:
                     break
 
     machine_cmd_end(project, post)
-    print("")
+    log_dbg("")
     return post.get(numbers=project["setup"]["machine"].get("numbers", False))
