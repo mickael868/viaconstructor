@@ -49,6 +49,7 @@ from .output_plugins.gcode_linuxcnc import PostProcessorGcodeLinuxCNC
 from .output_plugins.hpgl import PostProcessorHpgl
 from .preview_plugins.gcode import GcodeParser
 from .setupdefaults import setup_defaults
+from .vc_types import VcSegment
 
 try:
     from .ext.nest2D.nest2D import (Box, Item, Point,  # pylint: disable=E0611
@@ -2785,9 +2786,41 @@ class ViaConstructor:  # pylint: disable=R0904
                         )
                     )
 
+    def add_box(self):
+        """Create a bounding box including all other objects + a margin."""
+        segments = self.project["segments_org"]
+        m = 20
+        bb = points_to_boundingbox([i.start for i in segments])
+        x_min = bb[0] - m
+        y_min = bb[1] - m
+        x_max = bb[2] + m
+        y_max = bb[3] + m
+        points = [
+            (x_min, y_min),
+            (x_min, y_max),
+            (x_max, y_max),
+            (x_max, y_min),
+        ]
+        box_segments = [
+            VcSegment({"start": points[0], "end": points[1]}),
+            VcSegment({"start": points[1], "end": points[2]}),
+            VcSegment({"start": points[2], "end": points[3]}),
+            VcSegment({"start": points[3], "end": points[0]}),
+        ]
+        return box_segments
+
+    def deactivate_box(self):
+        "Deactive bounding box assuming it is the lastly insterted object."""
+        key = list(self.project["objects"].keys())[-1]
+        self.project["objects"][key]["setup"]["mill"]["active"] = False
+
     def prepare_segments(self) -> None:
         debug("prepare_segments: copy")
-        segments = deepcopy(self.project["segments_org"])
+        if self.args.invert:
+            bounding_box = self.add_box()
+        else:
+            bounding_box = []
+        segments = deepcopy(self.project["segments_org"]) + bounding_box
         debug("prepare_segments: clean_segments")
         self.project["segments"] = clean_segments(segments)
         debug("prepare_segments: segments2objects")
@@ -2837,6 +2870,8 @@ class ViaConstructor:  # pylint: disable=R0904
                 self.project["objects"]
             )
         debug("prepare_segments: done")
+        if self.args.invert:
+            self.deactivate_box()
 
     def load_drawing(self, filename: str, no_setup: bool = False) -> bool:
         # clean project
@@ -3121,11 +3156,18 @@ class ViaConstructor:  # pylint: disable=R0904
             type=str,
             default=None,
         )
+        parser.add_argument(
+            "-i",
+            "--invert",
+            help="invert material by adding a bounding box",
+            action="store_true",
+            default=None,
+        )
 
         for reader_plugin in reader_plugins.values():
             reader_plugin.arg_parser(parser)
 
-        self.args = parser.parse_args(direct_args)
+        self.args = parser.parse_args()  # TODO direct_args
         self.project["engine"] = self.args.engine
 
         # load setup
