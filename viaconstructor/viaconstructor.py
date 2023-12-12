@@ -1032,7 +1032,6 @@ class ViaConstructor:  # pylint: disable=R0904
 
     def object_changed(self, value=0) -> None:  # pylint: disable=W0613
         """Object setup changed."""
-
         titles = {
             "mill": "Mill",
             "tool": "Tool",
@@ -1290,7 +1289,8 @@ class ViaConstructor:  # pylint: disable=R0904
                             )
                         self.update_drawing()
                         self.status_bar_message(
-                            f"{self.info} - loading setup from machinecode..done"
+                            f"{self.info} - loading setup from machinecode.."
+                            f"done"
                         )
                         return
         self.status_bar_message(
@@ -1420,7 +1420,8 @@ class ViaConstructor:  # pylint: disable=R0904
                     if number == "99":
                         continue
                     tooltable_tbl.append(
-                        f"T{number} P{number} Z{0.0} D{tool['diameter']} ;{tool['name']} / blades:{tool['blades']}"
+                        f"T{number} P{number} Z{0.0} D{tool['diameter']} ;"
+                        f"{tool['name']} / blades:{tool['blades']}"
                     )
                 tooltable_tbl.append("")
                 tooldata = "\n".join(tooltable_tbl)
@@ -2810,7 +2811,7 @@ class ViaConstructor:  # pylint: disable=R0904
         return box_segments
 
     def deactivate_box(self):
-        "Deactive bounding box assuming it is the lastly insterted object."""
+        """Deactive bounding box assuming it is the lastly insterted object."""
         key = list(self.project["objects"].keys())[-1]
         self.project["objects"][key]["setup"]["mill"]["active"] = False
 
@@ -2836,7 +2837,8 @@ class ViaConstructor:  # pylint: disable=R0904
                 self.project["layers"][layer] = False
             else:
                 self.project["layers"][layer] = True
-            # experimental: get some milling data from layer name (https://groups.google.com/g/dxf2gcode-users/c/q3hPQkN2OCo)
+            # experimental: get some milling data from layer name
+            # https://groups.google.com/g/dxf2gcode-users/c/q3hPQkN2OCo
             if layer:
                 if layer.startswith("IGNORE:"):
                     obj["setup"]["mill"]["active"] = False
@@ -3167,7 +3169,7 @@ class ViaConstructor:  # pylint: disable=R0904
         for reader_plugin in reader_plugins.values():
             reader_plugin.arg_parser(parser)
 
-        self.args = parser.parse_args()  # TODO direct_args
+        self.args = parser.parse_args(direct_args + sys.argv[1:])
         self.project["engine"] = self.args.engine
 
         # load setup
