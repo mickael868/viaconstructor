@@ -1,4 +1,4 @@
-"""viaconstructor calculation functions."""
+"""Viaconstructor calculation functions."""
 
 import hashlib
 import math
@@ -18,8 +18,8 @@ except Exception:  # pylint: disable=W0703
     HAVE_PYCLIPPER = False
 
 from .ext.cavaliercontours import cavaliercontours as cavc
+from .log import log_dbg, log_error
 from .vc_types import VcObject
-from .log import *
 
 TWO_PI = math.pi * 2
 
@@ -59,7 +59,7 @@ def get_tmp_prefix() -> str:
 
 # ########## Misc Functions ###########
 def rotate_list(rlist, idx):
-    """rotating a list of values."""
+    """Rotating a list of values."""
     return rlist[idx:] + rlist[:idx]
 
 
@@ -142,17 +142,17 @@ def lines_intersect(line1_start, line1_end, line2_start, line2_end):
 
 
 def angle_of_line(p_1, p_2):
-    """gets the angle of a single line."""
+    """Get the angle of a single line."""
     return math.atan2(p_2[1] - p_1[1], p_2[0] - p_1[0])
 
 
 def fuzy_match(p_1, p_2):
-    """checks if  two points are matching / rounded."""
+    """Check if  two points are matching / rounded."""
     return math.hypot(p_1[0] - p_2[0], p_1[1] - p_2[1]) < 0.01
 
 
 def get_nearest_line(check, lines):
-    """gets the lowest distance between a point and a list of lines in 2D."""
+    """Get the lowest distance between a point and a list of lines in 2D."""
     nearest = None
     nline = None
     for line in lines:
@@ -166,7 +166,7 @@ def get_nearest_line(check, lines):
 
 
 def calc_distance_to_line(check, line):
-    """gets the lowest distance between a point and a line in 2D."""
+    """Get the lowest distance between a point and a line in 2D."""
     x_1 = line[0][0]
     y_1 = line[0][1]
     x_2 = line[1][0]
@@ -190,32 +190,32 @@ def calc_distance_to_line(check, line):
 
 
 def calc_distance(p_1, p_2):
-    """gets the distance between two points in 2D."""
+    """Get the distance between two points in 2D."""
     # return math.hypot(p_1[0] - p_2[0], p_1[1] - p_2[1])
     return math.dist(p_1[0:2], p_2[0:2])
 
 
 def calc_distance3d(p_1, p_2):
-    """gets the distance between two points in 3D."""
+    """Get the distance between two points in 3D."""
     return math.hypot(p_1[0] - p_2[0], p_1[1] - p_2[1], p_1[2] - p_2[2])
 
 
 def is_between(p_1, p_2, p_3):
-    """checks if a point is between 2 other points."""
+    """Check if a point is between 2 other points."""
     return round(math.hypot(p_1[0] - p_3[0], p_1[1] - p_3[1]), 2) + round(
         math.hypot(p_1[0] - p_2[0], p_1[1] - p_2[1]), 2
     ) == round(math.hypot(p_2[0] - p_3[0], p_2[1] - p_3[1]), 2)
 
 
 def line_center_2d(p_1, p_2):
-    """gets the center point between 2 points in 2D."""
+    """Get the center point between 2 points in 2D."""
     center_x = (p_1[0] + p_2[0]) / 2
     center_y = (p_1[1] + p_2[1]) / 2
     return (center_x, center_y)
 
 
 def line_center_3d(p_1, p_2):
-    """gets the center point between 2 points in 3D."""
+    """Get the center point between 2 points in 3D."""
     center_x = (p_1[0] + p_2[0]) / 2
     center_y = (p_1[1] + p_2[1]) / 2
     center_z = (p_1[2] + p_2[2]) / 2
@@ -223,7 +223,7 @@ def line_center_3d(p_1, p_2):
 
 
 def calc_face(p_1, p_2):
-    """gets the face of a line in 2D."""
+    """Get the face of a line in 2D."""
     angle = angle_of_line(p_1, p_2) + math.pi
     center_x = (p_1[0] + p_2[0]) / 2
     center_y = (p_1[1] + p_2[1]) / 2
@@ -233,7 +233,7 @@ def calc_face(p_1, p_2):
 
 
 def angle_2d(p_1, p_2):
-    """gets the angle of a single line (2nd version)."""
+    """Get the angle of a single line (2nd version)."""
     theta1 = math.atan2(p_1[1], p_1[0])
     theta2 = math.atan2(p_2[1], p_2[0])
     dtheta = theta2 - theta1
@@ -312,7 +312,7 @@ def get_half_bulge_point(last: tuple, point: tuple, bulge: float) -> tuple:
 
 
 def clean_segments(segments: list) -> list:
-    """removing double and overlaying lines."""
+    """Remove double and overlaying lines."""
     cleaned = {}
     for segment1 in segments:
         min_x = round(min(segment1.start[0], segment1.end[0]), 4)
@@ -326,7 +326,7 @@ def clean_segments(segments: list) -> list:
 
 
 def is_inside_polygon(obj, point):
-    """checks if a point is inside an polygon."""
+    """Check if a point is inside an polygon."""
     angle = 0.0
     point_0 = point[0]
     point_1 = point[1]
@@ -339,7 +339,7 @@ def is_inside_polygon(obj, point):
 
 
 def reverse_object(obj):
-    """reverse the direction of an object."""
+    """Reverse the direction of an object."""
     obj.segments.reverse()
     for segment in obj.segments:
         end = segment.end
@@ -351,7 +351,7 @@ def reverse_object(obj):
 
 # ########## Objects Functions ###########
 def find_outer_objects(objects, point, exclude=None):
-    """gets a list of closed objects where the point is inside."""
+    """Get a list of closed objects where the point is inside."""
     if not exclude:
         exclude = []
     outer = []
@@ -364,8 +364,7 @@ def find_outer_objects(objects, point, exclude=None):
 
 
 def find_tool_offsets(objects):
-    """check if object is inside an other closed  objects."""
-
+    """Check if object is inside an other closed  objects."""
     part_l = len(objects)
     part_n = 0
     max_outer = 0
@@ -373,15 +372,18 @@ def find_tool_offsets(objects):
         obj["inner_objects"] = []
 
     for obj_idx, obj in objects.items():
-        log_dbg(f"set offsets: {round((part_n + 1) * 100 / part_l, 1)}%", end="\r")
+        log_dbg(
+            f"set offsets: {round((part_n + 1) * 100 / part_l, 1)}%", end="\r"
+        )
         part_n += 1
 
         outer = find_outer_objects(objects, obj.segments[0].start, [obj_idx])
         obj.outer_objects = outer
         if obj.closed:
-
             if obj.setup["mill"]["offset"] == "auto":
-                obj.tool_offset = "outside" if len(outer) % 2 == 0 else "inside"
+                obj.tool_offset = (
+                    "outside" if len(outer) % 2 == 0 else "inside"
+                )
             else:
                 obj.tool_offset = obj.setup["mill"]["offset"]
         if max_outer < len(outer):
@@ -406,7 +408,7 @@ def num_unused_segments(segments):
 
 
 def segments2objects(segments):
-    """merge single segments to objects."""
+    """Merge single segments to objects."""
     test_segments = deepcopy(segments)
     objects = {}
     obj_idx = 0
@@ -455,7 +457,10 @@ def segments2objects(segments):
             while True:
                 found_next = False
                 for seg_idx, segment in enumerate(test_segments):
-                    if segment["object"] is None and obj.layer == segment.layer:
+                    if (
+                        segment["object"] is None
+                        and obj.layer == segment.layer
+                    ):
                         # add matching segment
                         if fuzy_match(last.end, segment.start):
                             segment.object = obj_idx
@@ -480,7 +485,9 @@ def segments2objects(segments):
                             break
 
                 if not found_next:
-                    obj.closed = fuzy_match(obj.segments[0].start, obj.segments[-1].end)
+                    obj.closed = fuzy_match(
+                        obj.segments[0].start, obj.segments[-1].end
+                    )
                     if obj.closed:
                         break
 
@@ -509,9 +516,8 @@ def segments2objects(segments):
                 max_x = max(max_x, segment.start[0], segment.end[0])
                 max_y = max(max_y, segment.start[1], segment.end[1])
             uid = hashlib.md5(
-                f"{int(min_x * 100)}_{int(min_y * 100)}_{int(max_x * 100)}_{int(max_y * 100)}".encode(
-                    "utf-8"
-                )
+                f"{int(min_x * 100)}_{int(min_y * 100)}_{int(max_x * 100)}_"
+                f"{int(max_y * 100)}".encode("utf-8")
             ).hexdigest()
             obj_uid = f"{obj_idx}:{uid}"
 
@@ -527,7 +533,7 @@ def segments2objects(segments):
 
 # ########## Vertex Functions ###########
 def vertex_data_cache(offset):
-    """Caching the very slow vertex_data() function."""
+    """Cache the very slow vertex_data() function."""
     if hasattr(offset, "cache"):
         vertex_data = offset.cache
     else:
@@ -537,7 +543,7 @@ def vertex_data_cache(offset):
 
 
 def inside_vertex(vertex_data, point):
-    """checks if a point is inside an polygon in vertex format."""
+    """Check if a point is inside an polygon in vertex format."""
     angle = 0.0
     start_x = vertex_data[0][-1]
     start_y = vertex_data[1][-1]
@@ -545,7 +551,8 @@ def inside_vertex(vertex_data, point):
     point_1 = point[1]
     for end_x, end_y in zip(vertex_data[0], vertex_data[1]):
         angle += angle_2d(
-            (start_x - point_0, start_y - point_1), (end_x - point_0, end_y - point_1)
+            (start_x - point_0, start_y - point_1),
+            (end_x - point_0, end_y - point_1),
         )
         start_x = end_x
         start_y = end_y
@@ -574,7 +581,7 @@ def bulge_points(start, end, bulge, parts=10):
 
 
 def vertex2points(vertex_data, no_bulge=False, scale=1.0, interpolate=0):
-    """converts an vertex to a list of points"""
+    """Convert an vertex to a list of points."""
     points = []
 
     if no_bulge:
@@ -613,14 +620,16 @@ def vertex2points(vertex_data, no_bulge=False, scale=1.0, interpolate=0):
             for pos_x, pos_y in zip(vertex_data[0], vertex_data[1]):
                 points.append((pos_x * scale, pos_y * scale))
     else:
-        for pos_x, pos_y, bulge in zip(vertex_data[0], vertex_data[1], vertex_data[2]):
+        for pos_x, pos_y, bulge in zip(
+            vertex_data[0], vertex_data[1], vertex_data[2]
+        ):
             points.append((pos_x * scale, pos_y * scale, bulge))
 
     return points
 
 
 def points2vertex(points, scale=1.0):
-    """converts a list of points to vertex"""
+    """Convert a list of points to vertex."""
     xdata = []
     ydata = []
     bdata = []
@@ -638,7 +647,7 @@ def points2vertex(points, scale=1.0):
 
 
 def object2vertex(obj):
-    """converts an object to vertex points"""
+    """Convert an object to vertex points."""
     xdata = []
     ydata = []
     bdata = []
@@ -661,7 +670,7 @@ def object2vertex(obj):
 
 
 def object2points(obj):
-    """converts an object to list of points"""
+    """Convert an object to list of points."""
     points = []
     for segment in obj.segments:
         points.append(segment.start)
@@ -686,12 +695,13 @@ def found_next_point_on_segment(mpos, objects):
                 ((mpos[0] + 5, mpos[1] - 5), (mpos[0] - 5, mpos[1] + 5)),
                 # ((mpos[0] - 5, mpos[1]), (mpos[0] + 5, mpos[1])),
             ):
-                inter = lines_intersect(check[0], check[1], segment.start, segment.end)
+                inter = lines_intersect(
+                    check[0], check[1], segment.start, segment.end
+                )
                 if inter:
                     length = calc_distance(segment.start, segment.end)
                     if length > 0.0:
                         if bulge != 0.0:
-
                             inter = get_half_bulge_point(
                                 (last_x, last_y), (pos_x, pos_y), bulge
                             )
@@ -727,7 +737,11 @@ def found_next_open_segment_point(mpos, objects, max_dist=None, exclude=None):
     for obj_idx, obj in objects.items():
         if not obj.closed:
             for segmentd_idx in (0, -1):
-                if exclude and exclude[0] == obj_idx and exclude[1] == segmentd_idx:
+                if (
+                    exclude
+                    and exclude[0] == obj_idx
+                    and exclude[1] == segmentd_idx
+                ):
                     continue
                 if segmentd_idx == 0:
                     pos_x = obj.segments[segmentd_idx].start[0]
@@ -780,14 +794,20 @@ def found_next_tab_point(mpos, offsets):
                     ((mpos[0] + 5, mpos[1] - 5), (mpos[0] - 5, mpos[1] + 5)),
                     ((mpos[0] - 5, mpos[1]), (mpos[0] + 5, mpos[1])),
                 ):
-                    inter = lines_intersect(check[0], check[1], line_start, line_end)
+                    inter = lines_intersect(
+                        check[0], check[1], line_start, line_end
+                    )
                     if inter:
                         length = calc_distance(line_start, line_end)
                         if length > offset.setup["tabs"]["width"]:
-                            angle = angle_of_line((last_x, last_y), (pos_x, pos_y))
+                            angle = angle_of_line(
+                                (last_x, last_y), (pos_x, pos_y)
+                            )
                             if last_bulge != 0.0:
                                 inter = get_half_bulge_point(
-                                    (last_x, last_y), (pos_x, pos_y), last_bulge
+                                    (last_x, last_y),
+                                    (pos_x, pos_y),
+                                    last_bulge,
                                 )
 
                             start_x = inter[0] + 3 * math.sin(angle)
@@ -824,7 +844,9 @@ def points2offsets(
     polyline_offset.start = obj.start
     polyline_offset.is_pocket = is_pocket
     polyline_offset.fixed_direction = False
-    polyline_offsets[f"{parent_id}.{offset_idx}.{pocket_idx}"] = polyline_offset
+    polyline_offsets[
+        f"{parent_id}.{offset_idx}.{pocket_idx}"
+    ] = polyline_offset
     offset_idx += 1
     return offset_idx
 
@@ -840,13 +862,15 @@ def do_pockets(  # pylint: disable=R0913
     vertex_data_org,  # pylint: disable=W0613
     parent_id,
 ):
-    """calculates multiple offset lines of an polyline"""
+    """Calculate multiple offset lines of an polyline."""
     interpolate = 6
     abs_tool_radius = abs(tool_radius)
     pocket_idx = 0
     if obj.setup["pockets"]["zigzag"]:
         vertex_data = vertex_data_cache(polyline)
-        points = vertex2points(vertex_data, no_bulge=True, interpolate=interpolate)
+        points = vertex2points(
+            vertex_data, no_bulge=True, interpolate=interpolate
+        )
         lines = []
 
         points_check = [points]
@@ -873,7 +897,10 @@ def do_pockets(  # pylint: disable=R0913
                 last = points[-1]
                 for point in points:
                     intersect = lines_intersect(
-                        (bounding[0] - 1, y_pos), (bounding[2] + 1, y_pos), last, point
+                        (bounding[0] - 1, y_pos),
+                        (bounding[2] + 1, y_pos),
+                        last,
+                        point,
                     )
                     if intersect is not None:
                         intersects.add(intersect[0])
@@ -930,8 +957,11 @@ def do_pockets(  # pylint: disable=R0913
                 parent_id=parent_id,
             )
             pocket_idx += 1
-    elif HAVE_PYCLIPPER and obj.inner_objects and obj.setup["pockets"]["islands"]:
-        print("pocket")
+    elif (
+        HAVE_PYCLIPPER
+        and obj.inner_objects
+        and obj.setup["pockets"]["islands"]
+    ):
         subjs = []
         vertex_data = vertex_data_cache(polyline)
         points = vertex2points(
@@ -949,7 +979,10 @@ def do_pockets(  # pylint: disable=R0913
             if polyline_offset and polyline_offset.level == level + 1:
                 vertex_data = vertex_data_cache(polyline_offset)
                 points = vertex2points(
-                    vertex_data, no_bulge=True, scale=1000.0, interpolate=interpolate
+                    vertex_data,
+                    no_bulge=True,
+                    scale=1000.0,
+                    interpolate=interpolate,
                 )
                 pco.AddPath(
                     points,
@@ -981,7 +1014,9 @@ def do_pockets(  # pylint: disable=R0913
                     pyclipper.JT_ROUND,  # pylint: disable=E1101
                     pyclipper.ET_CLOSEDPOLYGON,  # pylint: disable=E1101
                 )
-            subjs = pco.Execute(-abs_tool_radius * 1000)  # pylint: disable=E1101
+            subjs = pco.Execute(
+                -abs_tool_radius * 1000
+            )  # pylint: disable=E1101
             if not subjs:
                 break
             for points in subjs:
@@ -1028,12 +1063,18 @@ def do_pockets(  # pylint: disable=R0913
         offset_idx += 1
 
     else:
-        offsets = polyline.parallel_offset(delta=tool_radius, check_self_intersect=True)
+        offsets = polyline.parallel_offset(
+            delta=tool_radius, check_self_intersect=True
+        )
         for polyline_offset in offsets:
             if polyline_offset:
                 # workaround for bad offsets
                 vertex_data = vertex_data_cache(polyline_offset)
-                point = (vertex_data[0][0], vertex_data[1][0], vertex_data[2][0])
+                point = (
+                    vertex_data[0][0],
+                    vertex_data[1][0],
+                    vertex_data[2][0],
+                )
                 if not inside_vertex(vertex_data_org, point):
                     continue
                 polyline_offset.level = len(obj.outer_objects)
@@ -1067,14 +1108,15 @@ def do_pockets(  # pylint: disable=R0913
 def object2polyline_offsets(
     diameter, obj, obj_idx, max_outer, polyline_offsets, small_circles=False
 ):
-    """calculates the offset line(s) of one object"""
-
+    """Calculate the offset line(s) of one object."""
     new_polyline_offsets = {}
 
     def overcut() -> None:
         quarter_pi = math.pi / 4
         radius_3 = abs(tool_radius * 3)
-        for offset_idx, polyline in enumerate(list(new_polyline_offsets.values())):
+        for offset_idx, polyline in enumerate(
+            list(new_polyline_offsets.values())
+        ):
             points = vertex2points(vertex_data_cache(polyline))
             xdata = []
             ydata = []
@@ -1106,8 +1148,12 @@ def object2polyline_offsets(
                                     (last[0], last[1]),
                                 )
                                 over_dist = dist - abs(tool_radius)
-                                over_x = last[0] - (over_dist) * math.sin(c_angle)
-                                over_y = last[1] + (over_dist) * math.cos(c_angle)
+                                over_x = last[0] - (over_dist) * math.sin(
+                                    c_angle
+                                )
+                                over_y = last[1] + (over_dist) * math.cos(
+                                    c_angle
+                                )
                                 xdata.append(over_x)
                                 ydata.append(over_y)
                                 bdata.append(0.0)
@@ -1156,7 +1202,9 @@ def object2polyline_offsets(
                             bdata.append(0.0)
                             break
 
-            over_polyline = cavc.Polyline((xdata, ydata, bdata), is_closed=True)
+            over_polyline = cavc.Polyline(
+                (xdata, ydata, bdata), is_closed=True
+            )
             over_polyline.level = len(obj.outer_objects)
             over_polyline.start = obj.start
             over_polyline.setup = obj.setup
@@ -1258,7 +1306,7 @@ def object2polyline_offsets(
 
 
 def objects2polyline_offsets(setup, objects, max_outer):
-    """calculates the offset line(s) of all objects"""
+    """Calculate the offset line(s) of all objects."""
     polyline_offsets = {}
 
     unit = setup["machine"]["unit"]
@@ -1302,7 +1350,12 @@ def objects2polyline_offsets(setup, objects, max_outer):
                 reverse_object(obj_copy)
 
             object2polyline_offsets(
-                diameter, obj_copy, obj_idx, max_outer, polyline_offsets, small_circles
+                diameter,
+                obj_copy,
+                obj_idx,
+                max_outer,
+                polyline_offsets,
+                small_circles,
             )
 
     log_dbg("")
@@ -1311,7 +1364,7 @@ def objects2polyline_offsets(setup, objects, max_outer):
 
 # analyze size
 def objects2minmax(objects):
-    """find the min/max values of objects"""
+    """Find the min/max values of objects."""
     if len(objects.keys()) == 0:
         return (0, 0, 0, 0)
     fist_key = list(objects.keys())[0]
@@ -1335,7 +1388,11 @@ def objects2minmax(objects):
 
 
 def rotate_point(
-    origin_x: float, origin_y: float, point_x: float, point_y: float, angle: float
+    origin_x: float,
+    origin_y: float,
+    point_x: float,
+    point_y: float,
+    angle: float,
 ) -> tuple:
     new_x = (
         origin_x
@@ -1353,17 +1410,21 @@ def rotate_point(
 def rotate_object(
     obj: VcObject, origin_x: float, origin_y: float, angle: float
 ) -> None:
-    """rotates an object"""
+    """Rotate an object."""
     for segment in obj.segments:
         for ptype in ("start", "end", "center"):
             if ptype in segment:
                 segment[ptype] = rotate_point(
-                    origin_x, origin_y, segment[ptype][0], segment[ptype][1], angle
+                    origin_x,
+                    origin_y,
+                    segment[ptype][0],
+                    segment[ptype][1],
+                    angle,
                 )
 
 
 def move_object(obj: VcObject, xoff: float, yoff: float) -> None:
-    """moves an object"""
+    """Move an object."""
     for segment in obj.segments:
         for ptype in ("start", "end", "center"):
             if ptype in segment:
@@ -1374,7 +1435,7 @@ def move_object(obj: VcObject, xoff: float, yoff: float) -> None:
 
 
 def move_objects(objects: dict, xoff: float, yoff: float) -> None:
-    """moves an object"""
+    """Move an object."""
     for obj in objects.values():
         move_object(obj, xoff, yoff)
 
@@ -1385,7 +1446,7 @@ def mirror_objects(
     vertical: bool = False,
     horizontal: bool = False,
 ) -> None:
-    """mirrors an object"""
+    """Mirror an object."""
     if vertical or horizontal:
         for obj in objects.values():
             for segment in obj.segments:
@@ -1407,7 +1468,7 @@ def mirror_objects(
 
 
 def rotate_objects(objects: dict, min_max: list[float]) -> None:
-    """rotates all object"""
+    """Rotate all object."""
     for obj in objects.values():
         for segment in obj.segments:
             for ptype in ("start", "end", "center"):
@@ -1420,7 +1481,7 @@ def rotate_objects(objects: dict, min_max: list[float]) -> None:
 
 
 def scale_object(obj: VcObject, scale: float) -> None:
-    """scale an object"""
+    """Scale an object."""
     for segment in obj.segments:
         for ptype in ("start", "end", "center"):
             if ptype in segment:
@@ -1431,7 +1492,7 @@ def scale_object(obj: VcObject, scale: float) -> None:
 
 
 def scale_objects(objects: dict, scale: float) -> None:
-    """scale all object"""
+    """Scale all objects."""
     for obj in objects.values():
         for segment in obj.segments:
             for ptype in ("start", "end", "center"):
