@@ -1,4 +1,4 @@
-"""viaconstructor tool."""
+"""Viaconstructor tool."""
 
 import argparse
 import gettext
@@ -19,92 +19,63 @@ from typing import Optional, Union
 import ezdxf
 import setproctitle
 from PyQt5.QtCore import Qt  # pylint: disable=E0611
-from PyQt5.QtGui import QFont, QIcon, QImage, QPalette, QPixmap  # pylint: disable=E0611
-from PyQt5.QtWidgets import (  # pylint: disable=E0611
-    QAction,
-    QApplication,
-    QCheckBox,
-    QColorDialog,
-    QComboBox,
-    QDialog,
-    QDialogButtonBox,
-    QDoubleSpinBox,
-    QFileDialog,
-    QGridLayout,
-    QHBoxLayout,
-    QInputDialog,
-    QLabel,
-    QLineEdit,
-    QMainWindow,
-    QMenuBar,
-    QMessageBox,
-    QPlainTextEdit,
-    QPushButton,
-    QSizePolicy,
-    QSpinBox,
-    QStatusBar,
-    QTableWidget,
-    QTableWidgetItem,
-    QTabWidget,
-    QToolBar,
-    QVBoxLayout,
-    QWidget,
-)
+from PyQt5.QtGui import (QFont, QIcon, QImage,  # pylint: disable=E0611
+                         QPalette, QPixmap)
+from PyQt5.QtWidgets import (QAction, QApplication,  # pylint: disable=E0611
+                             QCheckBox, QColorDialog, QComboBox, QDialog,
+                             QDialogButtonBox, QDoubleSpinBox, QFileDialog,
+                             QGridLayout, QHBoxLayout, QInputDialog, QLabel,
+                             QLineEdit, QMainWindow, QMenuBar, QMessageBox,
+                             QPlainTextEdit, QPushButton, QSizePolicy,
+                             QSpinBox, QStatusBar, QTableWidget,
+                             QTableWidgetItem, QTabWidget, QToolBar,
+                             QVBoxLayout, QWidget)
 
-from .calc import (
-    clean_segments,
-    external_command,
-    find_tool_offsets,
-    get_tmp_prefix,
-    mirror_objects,
-    move_object,
-    move_objects,
-    object2points,
-    objects2minmax,
-    objects2polyline_offsets,
-    points_to_boundingbox,
-    points_to_center,
-    rotate_object,
-    rotate_objects,
-    scale_object,
-    scale_objects,
-    segments2objects,
-)
+from .calc import (clean_segments, external_command, find_tool_offsets,
+                   get_tmp_prefix, mirror_objects, move_object, move_objects,
+                   object2points, objects2minmax, objects2polyline_offsets,
+                   points_to_boundingbox, points_to_center, rotate_object,
+                   rotate_objects, scale_object, scale_objects,
+                   segments2objects)
 from .draw2d import CanvasWidget
 from .draw2d import draw_all as draw_all_2d
 from .fonttool import FontTool
 from .gldraw import GLWidget
 from .gldraw import draw_all as draw_all_gl
+from .log import log_dbg, log_error, log_warn
 from .machine_cmd import polylines2machine_cmd
 from .output_plugins.gcode_grbl import PostProcessorGcodeGrbl
 from .output_plugins.gcode_linuxcnc import PostProcessorGcodeLinuxCNC
 from .output_plugins.hpgl import PostProcessorHpgl
 from .preview_plugins.gcode import GcodeParser
 from .setupdefaults import setup_defaults
-from .log import *
 
 try:
-    from .ext.nest2D.nest2D import (  # pylint: disable=E0611
-        Box,
-        Item,
-        Point,
-        SVGWriter,
-        nest,
-    )
+    from .ext.nest2D.nest2D import (Box, Item, Point,  # pylint: disable=E0611
+                                    SVGWriter, nest)
 
     HAVE_NEST = True
 except Exception:  # pylint: disable=W0703
     HAVE_NEST = False
 
 reader_plugins: dict = {}
-for reader in ("dxfread", "hpglread", "stlread", "svgread", "ttfread", "imgread"):
+for reader in (
+    "dxfread",
+    "hpglread",
+    "stlread",
+    "svgread",
+    "ttfread",
+    "imgread",
+):
     try:
         drawing_reader = importlib.import_module(
             f".{reader}", "viaconstructor.input_plugins"
         )
         reader_plugins[reader] = drawing_reader.DrawReader
     except Exception as reader_error:  # pylint: disable=W0703
-        sys.stderr.write(f"ERRO while loading input plugin {reader}: {reader_error}\n")
+        sys.stderr.write(
+            f"ERRO while loading input plugin {reader}: {reader_error}\n"
+        )
 
 
 DEBUG = False
@@ -147,7 +118,7 @@ if lang:
 
 
 class ViaConstructor:  # pylint: disable=R0904
-    """viaconstructor main class."""
+    """Viaconstructor main class."""
 
     LAYER_REGEX = re.compile(
         r"([a-zA-Z]{1,4}):\s*([+-]?([0-9]+([.][0-9]*)?|[.][0-9]+))"
@@ -213,7 +184,10 @@ class ViaConstructor:  # pylint: disable=R0904
                         msp.add_line(
                             segment.start,
                             segment.end,
-                            dxfattribs={"layer": segment.layer, "color": segment.color},
+                            dxfattribs={
+                                "layer": segment.layer,
+                                "color": segment.color,
+                            },
                         )
                     else:
                         (
@@ -229,7 +203,10 @@ class ViaConstructor:  # pylint: disable=R0904
                             radius=radius,
                             start_angle=start_angle * 180 / math.pi,
                             end_angle=end_angle * 180 / math.pi,
-                            dxfattribs={"layer": segment.layer, "color": segment.color},
+                            dxfattribs={
+                                "layer": segment.layer,
+                                "color": segment.color,
+                            },
                         )
             for vport in doc.viewports.get_config("*Active"):  # type: ignore
                 vport.dxf.grid_on = True
@@ -243,7 +220,7 @@ class ViaConstructor:  # pylint: disable=R0904
         return True
 
     def run_calculation(self) -> None:
-        """run all calculations."""
+        """Run all calculations."""
         if not self.project["draw_reader"]:
             return
 
@@ -293,7 +270,9 @@ class ViaConstructor:  # pylint: disable=R0904
         # create machine commands
         debug("run_calculation: machine_commands")
         output_plugin: Union[
-            PostProcessorHpgl, PostProcessorGcodeLinuxCNC, PostProcessorGcodeGrbl
+            PostProcessorHpgl,
+            PostProcessorGcodeLinuxCNC,
+            PostProcessorGcodeGrbl,
         ]
         if self.project["setup"]["machine"]["plugin"] == "gcode_linuxcnc":
             output_plugin = PostProcessorGcodeLinuxCNC(
@@ -315,14 +294,19 @@ class ViaConstructor:  # pylint: disable=R0904
             self.project["axis"] = output_plugin.axis()
         else:
             log_dbg(
-                f"ERROR: Unknown machine output plugin: {self.project['setup']['machine']['plugin']}"
+                f"ERROR: Unknown machine output plugin: "
+                f"{self.project['setup']['machine']['plugin']}"
             )
             sys.exit(1)
-        self.project["machine_cmd"] = polylines2machine_cmd(self.project, output_plugin)
+        self.project["machine_cmd"] = polylines2machine_cmd(
+            self.project, output_plugin
+        )
         debug("run_calculation: update textwidget")
         if self.project["textwidget"]:
             self.project["textwidget"].clear()
-            self.project["textwidget"].insertPlainText(self.project["machine_cmd"])
+            self.project["textwidget"].insertPlainText(
+                self.project["machine_cmd"]
+            )
             self.project["textwidget"].verticalScrollBar().setValue(0)
 
         debug("run_calculation: done")
@@ -331,13 +315,17 @@ class ViaConstructor:  # pylint: disable=R0904
         self.font_tool.show()
 
     def _toolbar_flipx(self) -> None:
-        mirror_objects(self.project["objects"], self.project["minMax"], vertical=True)
+        mirror_objects(
+            self.project["objects"], self.project["minMax"], vertical=True
+        )
         self.project["minMax"] = objects2minmax(self.project["objects"])
         self.update_tabs_data()
         self.update_drawing()
 
     def _toolbar_flipy(self) -> None:
-        mirror_objects(self.project["objects"], self.project["minMax"], horizontal=True)
+        mirror_objects(
+            self.project["objects"], self.project["minMax"], horizontal=True
+        )
         self.project["minMax"] = objects2minmax(self.project["objects"])
         self.update_tabs_data()
         self.update_drawing()
@@ -426,7 +414,10 @@ class ViaConstructor:  # pylint: disable=R0904
 
     def _toolbar_scale(self) -> None:
         scale, dialog_ok = QInputDialog.getText(
-            self.project["window"], _("Workpiece-Scale"), _("Scale-Factor:"), text="1.0"
+            self.project["window"],
+            _("Workpiece-Scale"),
+            _("Scale-Factor:"),
+            text="1.0",
         )
         if (
             dialog_ok
@@ -439,11 +430,11 @@ class ViaConstructor:  # pylint: disable=R0904
             self.update_drawing()
 
     def _toolbar_view_2d(self) -> None:
-        """center view."""
+        """Center view."""
         self.project["glwidget"].view_2d()
 
     def _toolbar_toggle_tab_selector(self) -> None:
-        """tab selector."""
+        """Tab selector."""
         title = _("Tab-Selector")
         if self.project["glwidget"].toggle_tab_selector():
             for toolbutton in self.toolbuttons.values():
@@ -465,7 +456,7 @@ class ViaConstructor:  # pylint: disable=R0904
         self.update_drawing()
 
     def _toolbar_toggle_delete_selector(self) -> None:
-        """delete selector."""
+        """Delete selector."""
         title = _("Delete-Selector")
         if self.project["glwidget"].toggle_delete_selector():
             for toolbutton in self.toolbuttons.values():
@@ -474,13 +465,15 @@ class ViaConstructor:  # pylint: disable=R0904
             self.toolbuttons[title][9].setChecked(True)
         else:
             self.toolbuttons[title][9].setChecked(False)
-            self.project["maxOuter"] = find_tool_offsets(self.project["objects"])
+            self.project["maxOuter"] = find_tool_offsets(
+                self.project["objects"]
+            )
             self.combobjwidget.clear()  # type: ignore
             for idx in self.project["objects"]:
                 self.combobjwidget.addItem(idx.split(":")[0])  # type: ignore
 
     def _toolbar_toggle_object_selector(self) -> None:
-        """delete selector."""
+        """Delete selector."""
         title = _("Object-Selector")
         if self.project["glwidget"].toggle_object_selector():
             for toolbutton in self.toolbuttons.values():
@@ -491,7 +484,7 @@ class ViaConstructor:  # pylint: disable=R0904
             self.toolbuttons[title][9].setChecked(False)
 
     def _toolbar_toggle_start_selector(self) -> None:
-        """start selector."""
+        """Start selector."""
         title = _("Start-Selector")
         if self.project["glwidget"].toggle_start_selector():
             for toolbutton in self.toolbuttons.values():
@@ -502,7 +495,7 @@ class ViaConstructor:  # pylint: disable=R0904
             self.toolbuttons[title][9].setChecked(False)
 
     def _toolbar_toggle_repair_selector(self) -> None:
-        """start selector."""
+        """Start selector."""
         title = _("Repair-Selector")
         if self.project["glwidget"].toggle_repair_selector():
             for toolbutton in self.toolbuttons.values():
@@ -513,7 +506,7 @@ class ViaConstructor:  # pylint: disable=R0904
             self.toolbuttons[title][9].setChecked(False)
 
     def _toolbar_view_reset(self) -> None:
-        """center view."""
+        """Center view."""
         self.project["glwidget"].view_reset()
 
     def machine_cmd_save(self, filename: str) -> bool:
@@ -534,7 +527,7 @@ class ViaConstructor:  # pylint: disable=R0904
             log_dbg(f"STATUS: {message}")
 
     def _toolbar_save_machine_cmd(self) -> None:
-        """save machine_cmd."""
+        """Save machine_cmd."""
         self.status_bar_message(f"{self.info} - save machine_cmd..")
         file_dialog = QFileDialog(self.main)
         file_dialog.setNameFilters(
@@ -557,7 +550,7 @@ class ViaConstructor:  # pylint: disable=R0904
             self.status_bar_message(f"{self.info} - save machine-code..cancel")
 
     def _toolbar_save_dxf(self) -> None:
-        """save doawing as dxf."""
+        """Save doawing as dxf."""
         self.status_bar_message(f"{self.info} - save drawing as dxf..")
         file_dialog = QFileDialog(self.main)
         file_dialog.setNameFilters(["dxf (*.dxf)"])
@@ -571,12 +564,14 @@ class ViaConstructor:  # pylint: disable=R0904
             "dxf (*.dxf)",
         )
         if name[0] and self.save_objects_as_dxf(name[0]):
-            self.status_bar_message(f"{self.info} - save dxf..done ({name[0]})")
+            self.status_bar_message(
+                f"{self.info} - save dxf..done ({name[0]})"
+            )
         else:
             self.status_bar_message(f"{self.info} - save dxf..cancel")
 
     def _toolbar_save_project(self) -> None:
-        """save project."""
+        """Save project."""
         self.status_bar_message(f"{self.info} - save project..")
         file_dialog = QFileDialog(self.main)
         file_dialog.setNameFilters(["vcp (*.vcp)"])
@@ -597,7 +592,7 @@ class ViaConstructor:  # pylint: disable=R0904
         self.status_bar_message(f"{self.info} - save vcp..done ({name[0]})")
 
     def _toolbar_load_project(self) -> None:
-        """load project."""
+        """Load project."""
         self.status_bar_message(f"{self.info} - load project..")
         file_dialog = QFileDialog(self.main)
 
@@ -617,12 +612,14 @@ class ViaConstructor:  # pylint: disable=R0904
             self.create_menubar()
             self.create_toolbar()
 
-            self.status_bar_message(f"{self.info} - load project..done ({name[0]})")
+            self.status_bar_message(
+                f"{self.info} - load project..done ({name[0]})"
+            )
         else:
             self.status_bar_message(f"{self.info} - load project..cancel")
 
     def _toolbar_load_drawing(self) -> None:
-        """load drawing."""
+        """Load drawing."""
         self.status_bar_message(f"{self.info} - load drawing..")
         file_dialog = QFileDialog(self.main)
 
@@ -646,7 +643,9 @@ class ViaConstructor:  # pylint: disable=R0904
             self.create_menubar()
             self.create_toolbar()
 
-            self.status_bar_message(f"{self.info} - load drawing..done ({name[0]})")
+            self.status_bar_message(
+                f"{self.info} - load drawing..done ({name[0]})"
+            )
         else:
             self.status_bar_message(f"{self.info} - load drawing..cancel")
 
@@ -667,12 +666,14 @@ class ViaConstructor:  # pylint: disable=R0904
 
     def setup_save(self, filename: str) -> bool:
         with open(filename, "w") as fd_setup:
-            fd_setup.write(json.dumps(self.project["setup"], indent=4, sort_keys=True))
+            fd_setup.write(
+                json.dumps(self.project["setup"], indent=4, sort_keys=True)
+            )
             return True
         return False
 
     def _toolbar_save_setup(self) -> None:
-        """save setup."""
+        """Save setup."""
         self.status_bar_message(f"{self.info} - save setup..")
         if self.setup_save(self.args.setup):
             self.status_bar_message(f"{self.info} - save setup..done")
@@ -680,7 +681,7 @@ class ViaConstructor:  # pylint: disable=R0904
             self.status_bar_message(f"{self.info} - save setup..error")
 
     def _toolbar_load_setup_from(self) -> None:
-        """load setup from."""
+        """Load setup from."""
         self.status_bar_message(f"{self.info} - load setup from..")
         file_dialog = QFileDialog(self.main)
         file_dialog.setNameFilters(["setup (*.json)"])
@@ -694,12 +695,14 @@ class ViaConstructor:  # pylint: disable=R0904
             self.global_changed(0)
             self.update_drawing()
             self.project["status"] = "READY"
-            self.status_bar_message(f"{self.info} - load setup from..done ({name[0]})")
+            self.status_bar_message(
+                f"{self.info} - load setup from..done ({name[0]})"
+            )
         else:
             self.status_bar_message(f"{self.info} - load setup from..cancel")
 
     def _toolbar_save_setup_as(self) -> None:
-        """save setup as."""
+        """Save setup as."""
         self.status_bar_message(f"{self.info} - save setup as..")
         file_dialog = QFileDialog(self.main)
         file_dialog.setNameFilters(["setup (*.json)"])
@@ -707,7 +710,9 @@ class ViaConstructor:  # pylint: disable=R0904
             self.main, "Save Setup", self.args.setup, "setup (*.json)"
         )
         if name[0] and self.setup_save(name[0]):
-            self.status_bar_message(f"{self.info} - save setup as..done ({name[0]})")
+            self.status_bar_message(
+                f"{self.info} - save setup as..done ({name[0]})"
+            )
         else:
             self.status_bar_message(f"{self.info} - ave setup as..cancel")
 
@@ -721,7 +726,9 @@ class ViaConstructor:  # pylint: disable=R0904
                 self.prepare_segments()
                 self.update_drawing()
                 self.project["status"] = "READY"
-                self.status_bar_message(f"{self.info} - load setup from drawing..done")
+                self.status_bar_message(
+                    f"{self.info} - load setup from drawing..done"
+                )
             else:
                 self.status_bar_message(
                     f"{self.info} - load setup from drawing..failed"
@@ -732,7 +739,9 @@ class ViaConstructor:  # pylint: disable=R0904
             self.project["draw_reader"].save_setup(  # type: ignore
                 json.dumps(self.project["setup"], indent=4, sort_keys=True)
             )
-            self.status_bar_message(f"{self.info} - save setup to drawing..done")
+            self.status_bar_message(
+                f"{self.info} - save setup to drawing..done"
+            )
 
     def toggle_layer(self, item):
         layer = self.project["layerwidget"].item(item.row(), 0).text()
@@ -748,17 +757,23 @@ class ViaConstructor:  # pylint: disable=R0904
 
     def update_layers(self) -> None:
         if "layerwidget" in self.project:
-            self.project["layerwidget"].setRowCount(len(self.project["layers"]))
+            self.project["layerwidget"].setRowCount(
+                len(self.project["layers"])
+            )
             row_idx = 0
             for layer, enabled in self.project["layers"].items():
-                self.project["layerwidget"].setItem(row_idx, 0, QTableWidgetItem(layer))
                 self.project["layerwidget"].setItem(
-                    row_idx, 1, QTableWidgetItem("enabled" if enabled else "disabled")
+                    row_idx, 0, QTableWidgetItem(layer)
+                )
+                self.project["layerwidget"].setItem(
+                    row_idx,
+                    1,
+                    QTableWidgetItem("enabled" if enabled else "disabled"),
                 )
                 row_idx += 1
 
     def update_drawing(self, draw_only=False) -> None:
-        """update drawings."""
+        """Update drawings."""
         if not self.project["draw_reader"]:
             return
 
@@ -840,7 +855,9 @@ class ViaConstructor:  # pylint: disable=R0904
             uid = idx.split(":")[1]
             obj["setup"] = deepcopy(self.project["setup"])
             if uid in project_data["objects"]:
-                for section, section_data in project_data["objects"][uid].items():
+                for section, section_data in project_data["objects"][
+                    uid
+                ].items():
                     for key, value in section_data.items():
                         obj["setup"][section][key] = value
             if "starts" in project_data and uid in project_data["starts"]:
@@ -856,8 +873,9 @@ class ViaConstructor:  # pylint: disable=R0904
         return True
 
     def materials_select(self, material_idx) -> None:
-        """calculates the milling feedrate and tool-speed for the selected material
-        see: https://www.precifast.de/schnittgeschwindigkeit-beim-fraesen-berechnen/
+        """Calculate the milling feedrate and tool-speed for the selected material.
+
+        See: https://www.precifast.de/schnittgeschwindigkeit-beim-fraesen-berechnen/
         """
         machine_feedrate = self.project["setup"]["machine"]["feedrate"]
         machine_toolspeed = self.project["setup"]["machine"]["tool_speed"]
@@ -875,9 +893,9 @@ class ViaConstructor:  # pylint: disable=R0904
         unit = self.project["setup"]["machine"]["unit"]
         if unit == "inch":
             diameter *= 25.4
-        tool_vc = self.project["setup"]["workpiece"]["materialtable"][material_idx][
-            "vc"
-        ]
+        tool_vc = self.project["setup"]["workpiece"]["materialtable"][
+            material_idx
+        ]["vc"]
         tool_speed = tool_vc * 1000 / (diameter * math.pi)
         tool_speed = int(min(tool_speed, machine_toolspeed))
         if diameter <= 4.0:
@@ -886,9 +904,9 @@ class ViaConstructor:  # pylint: disable=R0904
             fz_key = "fz8"
         else:
             fz_key = "fz12"
-        material_fz = self.project["setup"]["workpiece"]["materialtable"][material_idx][
-            fz_key
-        ]
+        material_fz = self.project["setup"]["workpiece"]["materialtable"][
+            material_idx
+        ][fz_key]
         feedrate = tool_speed * blades * material_fz
         feedrate = int(min(feedrate, machine_feedrate))
 
@@ -913,9 +931,15 @@ class ViaConstructor:  # pylint: disable=R0904
 
         self.project["status"] = "CHANGE"
         for obj in self.project["objects"].values():
-            if obj.setup["tool"]["rate_h"] == self.project["setup"]["tool"]["rate_h"]:
+            if (
+                obj.setup["tool"]["rate_h"]
+                == self.project["setup"]["tool"]["rate_h"]
+            ):
                 obj.setup["tool"]["rate_h"] = int(feedrate)
-            if obj.setup["tool"]["speed"] == self.project["setup"]["tool"]["speed"]:
+            if (
+                obj.setup["tool"]["speed"]
+                == self.project["setup"]["tool"]["speed"]
+            ):
                 obj.setup["tool"]["speed"] = int(tool_speed)
         self.project["setup"]["tool"]["rate_h"] = int(feedrate)
         self.project["setup"]["tool"]["speed"] = int(tool_speed)
@@ -956,7 +980,7 @@ class ViaConstructor:  # pylint: disable=R0904
         self.global_changed(0)
 
     def update_starts(self) -> None:
-        """update starts."""
+        """Update starts."""
         if self.save_starts == "ask":
             self.project["glwidget"].mouseReleaseEvent("")
             info_test = []
@@ -981,7 +1005,7 @@ class ViaConstructor:  # pylint: disable=R0904
         #    self.project["draw_reader"].save_starts(self.project["objects"])
 
     def update_tabs(self) -> None:
-        """update tabs table."""
+        """Update tabs table."""
         if self.save_tabs == "ask":
             self.project["glwidget"].mouseReleaseEvent("")
             info_test = []
@@ -1006,7 +1030,7 @@ class ViaConstructor:  # pylint: disable=R0904
             self.project["draw_reader"].save_tabs(self.project["tabs"]["data"])
 
     def object_changed(self, value=0) -> None:  # pylint: disable=W0613
-        """object setup changed."""
+        """Object setup changed."""
 
         titles = {
             "mill": "Mill",
@@ -1041,7 +1065,9 @@ class ViaConstructor:  # pylint: disable=R0904
                 if entry["type"] == "bool":
                     setup_data[sname][ename] = entry["widget_obj"].isChecked()
                 elif entry["type"] == "select":
-                    setup_data[sname][ename] = entry["widget_obj"].currentText()
+                    setup_data[sname][ename] = entry[
+                        "widget_obj"
+                    ].currentText()
                 elif entry["type"] == "float":
                     setup_data[sname][ename] = entry["widget_obj"].value()
                 elif entry["type"] == "int":
@@ -1049,12 +1075,17 @@ class ViaConstructor:  # pylint: disable=R0904
                 elif entry["type"] == "str":
                     setup_data[sname][ename] = entry["widget_obj"].text()
                 elif entry["type"] == "mstr":
-                    setup_data[sname][ename] = entry["widget_obj"].toPlainText()
+                    setup_data[sname][ename] = entry[
+                        "widget_obj"
+                    ].toPlainText()
                 elif entry["type"] == "table":
                     for row_idx in range(entry["widget_obj"].rowCount()):
                         col_idx = 0
                         for key, col_type in entry["columns"].items():
-                            if entry["widget_obj"].item(row_idx, col_idx + 1) is None:
+                            if (
+                                entry["widget_obj"].item(row_idx, col_idx + 1)
+                                is None
+                            ):
                                 log_error("TABLE_ERROR")
                                 continue
                             if col_type["type"] == "str":
@@ -1063,42 +1094,57 @@ class ViaConstructor:  # pylint: disable=R0904
                                     .item(row_idx, col_idx + 1)
                                     .text()
                                 )
-                                setup_data[sname][ename][row_idx][key] = str(value)
+                                setup_data[sname][ename][row_idx][key] = str(
+                                    value
+                                )
                             elif col_type["type"] == "mstr":
                                 value = (
                                     entry["widget_obj"]
                                     .item(row_idx, col_idx + 1)
                                     .toPlainText()
                                 )
-                                setup_data[sname][ename][row_idx][key] = str(value)
+                                setup_data[sname][ename][row_idx][key] = str(
+                                    value
+                                )
                             elif col_type["type"] == "int":
                                 value = (
                                     entry["widget_obj"]
                                     .item(row_idx, col_idx + 1)
                                     .text()
                                 )
-                                setup_data[sname][ename][row_idx][key] = int(value)
+                                setup_data[sname][ename][row_idx][key] = int(
+                                    value
+                                )
                             elif col_type["type"] == "float":
                                 value = (
                                     entry["widget_obj"]
                                     .item(row_idx, col_idx + 1)
                                     .text()
                                 )
-                                setup_data[sname][ename][row_idx][key] = float(value)
+                                setup_data[sname][ename][row_idx][key] = float(
+                                    value
+                                )
                             col_idx += 1
                 elif entry["type"] == "color":
                     pass
                 else:
                     log_warn(f"Unknown setup-type: {entry['type']}")
-                if setup_data[sname][ename] != self.project["setup"][sname][ename]:
+                if (
+                    setup_data[sname][ename]
+                    != self.project["setup"][sname][ename]
+                ):
                     entry["widget_obj_label"].setStyleSheet("color: black")
                     changed_section = True
                 else:
                     entry["widget_obj_label"].setStyleSheet("color: lightgray")
             if changed_section:
-                self.tabobjwidget.setTabText(tab_idx, f">{titles.get(sname, sname)}<")
+                self.tabobjwidget.setTabText(
+                    tab_idx, f">{titles.get(sname, sname)}<"
+                )
             else:
-                self.tabobjwidget.setTabText(tab_idx, f"{titles.get(sname, sname)}")
+                self.tabobjwidget.setTabText(
+                    tab_idx, f"{titles.get(sname, sname)}"
+                )
             tab_idx += 1
 
         if setup_data["mill"]["step"] >= 0.0:
@@ -1112,57 +1158,78 @@ class ViaConstructor:  # pylint: disable=R0904
         self.update_drawing()
 
     def global_changed(self, value=0) -> None:  # pylint: disable=W0613
-        """global setup changed."""
+        """Global setup changed."""
         if self.project["status"] == "CHANGE":
             return
         old_setup = deepcopy(self.project["setup"])
         for sname in self.project["setup_defaults"]:
             for ename, entry in self.project["setup_defaults"][sname].items():
                 if entry["type"] == "bool":
-                    self.project["setup"][sname][ename] = entry["widget"].isChecked()
+                    self.project["setup"][sname][ename] = entry[
+                        "widget"
+                    ].isChecked()
                 elif entry["type"] == "select":
-                    self.project["setup"][sname][ename] = entry["widget"].currentText()
+                    self.project["setup"][sname][ename] = entry[
+                        "widget"
+                    ].currentText()
                 elif entry["type"] == "float":
-                    self.project["setup"][sname][ename] = entry["widget"].value()
+                    self.project["setup"][sname][ename] = entry[
+                        "widget"
+                    ].value()
                 elif entry["type"] == "int":
-                    self.project["setup"][sname][ename] = entry["widget"].value()
+                    self.project["setup"][sname][ename] = entry[
+                        "widget"
+                    ].value()
                 elif entry["type"] == "str":
-                    self.project["setup"][sname][ename] = entry["widget"].text()
+                    self.project["setup"][sname][ename] = entry[
+                        "widget"
+                    ].text()
                 elif entry["type"] == "mstr":
-                    self.project["setup"][sname][ename] = entry["widget"].toPlainText()
+                    self.project["setup"][sname][ename] = entry[
+                        "widget"
+                    ].toPlainText()
                 elif entry["type"] == "table":
                     for row_idx in range(entry["widget"].rowCount()):
                         col_idx = 0
                         for key, col_type in entry["columns"].items():
-                            if entry["widget"].item(row_idx, col_idx + 1) is None:
+                            if (
+                                entry["widget"].item(row_idx, col_idx + 1)
+                                is None
+                            ):
                                 log_error("TABLE_ERROR")
                                 continue
                             if col_type["type"] == "str":
                                 value = (
-                                    entry["widget"].item(row_idx, col_idx + 1).text()
+                                    entry["widget"]
+                                    .item(row_idx, col_idx + 1)
+                                    .text()
                                 )
-                                self.project["setup"][sname][ename][row_idx][key] = str(
-                                    value
-                                )
+                                self.project["setup"][sname][ename][row_idx][
+                                    key
+                                ] = str(value)
                             elif col_type["type"] == "mstr":
                                 value = (
                                     entry["widget"]
                                     .item(row_idx, col_idx + 1)
                                     .toPlainText()
                                 )
-                                self.project["setup"][sname][ename][row_idx][key] = str(
-                                    value
-                                )
+                                self.project["setup"][sname][ename][row_idx][
+                                    key
+                                ] = str(value)
                             elif col_type["type"] == "int":
                                 value = (
-                                    entry["widget"].item(row_idx, col_idx + 1).text()
+                                    entry["widget"]
+                                    .item(row_idx, col_idx + 1)
+                                    .text()
                                 )
-                                self.project["setup"][sname][ename][row_idx][key] = int(
-                                    value
-                                )
+                                self.project["setup"][sname][ename][row_idx][
+                                    key
+                                ] = int(value)
                             elif col_type["type"] == "float":
                                 value = (
-                                    entry["widget"].item(row_idx, col_idx + 1).text()
+                                    entry["widget"]
+                                    .item(row_idx, col_idx + 1)
+                                    .text()
                                 )
                                 self.project["setup"][sname][ename][row_idx][
                                     key
@@ -1189,7 +1256,9 @@ class ViaConstructor:  # pylint: disable=R0904
                         global_value != old_setup[sect][key]
                         and obj["setup"][sect][key] == old_setup[sect][key]
                     ):
-                        obj["setup"][sect][key] = self.project["setup"][sect][key]
+                        obj["setup"][sect][key] = self.project["setup"][sect][
+                            key
+                        ]
 
         self.project["maxOuter"] = find_tool_offsets(self.project["objects"])
         self.update_object_setup()
@@ -1206,23 +1275,29 @@ class ViaConstructor:  # pylint: disable=R0904
             self.status_bar_message(
                 f"{self.info} - loading setup from machinecode: {self.project['filename_machine_cmd']}"
             )
-            with open(self.project["filename_machine_cmd"], "r") as fd_machine_cmd:
+            with open(
+                self.project["filename_machine_cmd"], "r"
+            ) as fd_machine_cmd:
                 gdata = fd_machine_cmd.read()
                 for g_line in gdata.split("\n"):
                     if g_line.startswith("(setup={"):
                         setup_json = g_line.strip("()").split("=", 1)[1]
                         ndata = json.loads(setup_json)
                         for sname in self.project["setup"]:
-                            self.project["setup"][sname].update(ndata.get(sname, {}))
+                            self.project["setup"][sname].update(
+                                ndata.get(sname, {})
+                            )
                         self.update_drawing()
                         self.status_bar_message(
                             f"{self.info} - loading setup from machinecode..done"
                         )
                         return
-        self.status_bar_message(f"{self.info} - loading setup from machinecode..failed")
+        self.status_bar_message(
+            f"{self.info} - loading setup from machinecode..failed"
+        )
 
     def _toolbar_load_tooltable(self) -> None:
-        """load tooltable."""
+        """Load tooltable."""
         self.status_bar_message(f"{self.info} - load tooltable..")
         file_dialog = QFileDialog(self.main)
         file_dialog.setNameFilters(["camotics (*.json)", "linuxcnc (*.tbl)"])
@@ -1267,7 +1342,9 @@ class ViaConstructor:  # pylint: disable=R0904
                         "lenght": tool["length"],
                         "blades": 2,
                     }
-                    self.project["setup"]["tool"]["tooltable"].insert(-1, new_tool)
+                    self.project["setup"]["tool"]["tooltable"].insert(
+                        -1, new_tool
+                    )
             else:
                 for tool in tooldata.split("\n"):
                     if tool and tool[0] == "T":
@@ -1287,7 +1364,9 @@ class ViaConstructor:  # pylint: disable=R0904
                                 new_tool["diameter"] = float(value[1:])
                         if ";" in tool:
                             new_tool["name"] = tool.split(";")[1]
-                        self.project["setup"]["tool"]["tooltable"].insert(-1, new_tool)
+                        self.project["setup"]["tool"]["tooltable"].insert(
+                            -1, new_tool
+                        )
 
             self.project["status"] = "CHANGE"
             self.update_global_setup()
@@ -1295,12 +1374,14 @@ class ViaConstructor:  # pylint: disable=R0904
             self.global_changed(0)
             self.update_drawing()
             self.project["status"] = "READY"
-            self.status_bar_message(f"{self.info} - load tooltable..done ({name[0]})")
+            self.status_bar_message(
+                f"{self.info} - load tooltable..done ({name[0]})"
+            )
         else:
             self.status_bar_message(f"{self.info} - load tooltable..cancel")
 
     def _toolbar_save_tooltable(self) -> None:
-        """save tooltable as."""
+        """Save tooltable as."""
         if self.project["setup"]["machine"]["unit"] == "inch":
             unit = "imperial"
         else:
@@ -1356,7 +1437,7 @@ class ViaConstructor:  # pylint: disable=R0904
             self.status_bar_message(f"{self.info} - save tooltable as..cancel")
 
     def _toolbar_exit(self) -> None:
-        """exit button."""
+        """Exit button."""
         if os.environ.get("LINUXCNCVERSION"):
             log_dbg(self.project["machine_cmd"])
         sys.exit(0)
@@ -1745,7 +1826,7 @@ class ViaConstructor:  # pylint: disable=R0904
         }
 
     def create_toolbar(self) -> None:
-        """creates the_toolbar."""
+        """Create the_toolbar."""
         if self.toolbar is None:
             self.toolbar = QToolBar("top toolbar")
             self.main.addToolBar(self.toolbar)  # type: ignore
@@ -1806,24 +1887,40 @@ class ViaConstructor:  # pylint: disable=R0904
         for sname in self.project["setup_defaults"]:
             for ename, entry in self.project["setup_defaults"][sname].items():
                 if entry["type"] == "bool":
-                    entry["widget"].setChecked(self.project["setup"][sname][ename])
+                    entry["widget"].setChecked(
+                        self.project["setup"][sname][ename]
+                    )
                 elif entry["type"] == "select":
-                    entry["widget"].setCurrentText(self.project["setup"][sname][ename])
+                    entry["widget"].setCurrentText(
+                        self.project["setup"][sname][ename]
+                    )
                 elif entry["type"] == "float":
-                    entry["widget"].setValue(self.project["setup"][sname][ename])
+                    entry["widget"].setValue(
+                        self.project["setup"][sname][ename]
+                    )
                 elif entry["type"] == "int":
-                    entry["widget"].setValue(self.project["setup"][sname][ename])
+                    entry["widget"].setValue(
+                        self.project["setup"][sname][ename]
+                    )
                 elif entry["type"] == "str":
-                    entry["widget"].setText(self.project["setup"][sname][ename])
+                    entry["widget"].setText(
+                        self.project["setup"][sname][ename]
+                    )
                 elif entry["type"] == "mstr":
-                    entry["widget"].setPlainText(self.project["setup"][sname][ename])
+                    entry["widget"].setPlainText(
+                        self.project["setup"][sname][ename]
+                    )
                 elif entry["type"] == "table":
                     # add empty row if not exist
                     first_element = list(entry["columns"].keys())[0]
 
                     if (
                         entry.get("column_defaults") is not None
-                        and str(self.project["setup"][sname][ename][-1][first_element])
+                        and str(
+                            self.project["setup"][sname][ename][-1][
+                                first_element
+                            ]
+                        )
                         != ""
                     ):
                         new_row = {}
@@ -1837,13 +1934,17 @@ class ViaConstructor:  # pylint: disable=R0904
                     table.setColumnCount(len(entry["columns"]))
                     if entry["selectable"]:
                         table.setColumnCount(len(entry["columns"]) + 1)
-                        table.setHorizontalHeaderItem(0, QTableWidgetItem("Select"))
+                        table.setHorizontalHeaderItem(
+                            0, QTableWidgetItem("Select")
+                        )
                         idxf_offset = 1
                     for col_idx, title in enumerate(entry["columns"]):
                         table.setHorizontalHeaderItem(
                             col_idx + idxf_offset, QTableWidgetItem(title)
                         )
-                    for row_idx, row in enumerate(self.project["setup"][sname][ename]):
+                    for row_idx, row in enumerate(
+                        self.project["setup"][sname][ename]
+                    ):
                         if entry["selectable"]:
                             button = QPushButton()
                             button.setIcon(
@@ -1898,7 +1999,9 @@ class ViaConstructor:  # pylint: disable=R0904
                 if entry["type"] == "bool":
                     checkbox = QCheckBox(entry.get("title", ename))
                     checkbox.setChecked(self.project["setup"][sname][ename])
-                    checkbox.setToolTip(entry.get("tooltip", f"{sname}/{ename}"))
+                    checkbox.setToolTip(
+                        entry.get("tooltip", f"{sname}/{ename}")
+                    )
                     checkbox.stateChanged.connect(self.global_changed)  # type: ignore
                     hlayout.addWidget(checkbox)
                     entry["widget"] = checkbox
@@ -1906,8 +2009,12 @@ class ViaConstructor:  # pylint: disable=R0904
                     combobox = QComboBox()
                     for option in entry["options"]:
                         combobox.addItem(option[0])
-                    combobox.setCurrentText(self.project["setup"][sname][ename])
-                    combobox.setToolTip(entry.get("tooltip", f"{sname}/{ename}"))
+                    combobox.setCurrentText(
+                        self.project["setup"][sname][ename]
+                    )
+                    combobox.setToolTip(
+                        entry.get("tooltip", f"{sname}/{ename}")
+                    )
                     combobox.currentTextChanged.connect(self.global_changed)  # type: ignore
                     hlayout.addWidget(combobox)
                     entry["widget"] = combobox
@@ -1927,7 +2034,9 @@ class ViaConstructor:  # pylint: disable=R0904
                     dspinbox.setMinimum(entry["min"])
                     dspinbox.setMaximum(entry["max"])
                     dspinbox.setValue(self.project["setup"][sname][ename])
-                    dspinbox.setToolTip(entry.get("tooltip", f"{sname}/{ename}"))
+                    dspinbox.setToolTip(
+                        entry.get("tooltip", f"{sname}/{ename}")
+                    )
                     dspinbox.valueChanged.connect(self.global_changed)  # type: ignore
                     hlayout.addWidget(dspinbox)
                     entry["widget"] = dspinbox
@@ -1937,21 +2046,27 @@ class ViaConstructor:  # pylint: disable=R0904
                     spinbox.setMinimum(entry["min"])
                     spinbox.setMaximum(entry["max"])
                     spinbox.setValue(self.project["setup"][sname][ename])
-                    spinbox.setToolTip(entry.get("tooltip", f"{sname}/{ename}"))
+                    spinbox.setToolTip(
+                        entry.get("tooltip", f"{sname}/{ename}")
+                    )
                     spinbox.valueChanged.connect(self.global_changed)  # type: ignore
                     hlayout.addWidget(spinbox)
                     entry["widget"] = spinbox
                 elif entry["type"] == "str":
                     lineedit = QLineEdit()
                     lineedit.setText(self.project["setup"][sname][ename])
-                    lineedit.setToolTip(entry.get("tooltip", f"{sname}/{ename}"))
+                    lineedit.setToolTip(
+                        entry.get("tooltip", f"{sname}/{ename}")
+                    )
                     lineedit.textChanged.connect(self.global_changed)  # type: ignore
                     hlayout.addWidget(lineedit)
                     entry["widget"] = lineedit
                 elif entry["type"] == "mstr":
                     mlineedit = QPlainTextEdit()
                     mlineedit.setPlainText(self.project["setup"][sname][ename])
-                    mlineedit.setToolTip(entry.get("tooltip", f"{sname}/{ename}"))
+                    mlineedit.setToolTip(
+                        entry.get("tooltip", f"{sname}/{ename}")
+                    )
                     mlineedit.textChanged.connect(self.global_changed)  # type: ignore
                     hlayout.addWidget(mlineedit)
                     entry["widget"] = mlineedit
@@ -1960,7 +2075,11 @@ class ViaConstructor:  # pylint: disable=R0904
                     first_element = list(entry["columns"].keys())[0]
                     if (
                         entry.get("column_defaults") is not None
-                        and str(self.project["setup"][sname][ename][-1][first_element])
+                        and str(
+                            self.project["setup"][sname][ename][-1][
+                                first_element
+                            ]
+                        )
                         != ""
                     ):
                         new_row = {}
@@ -1975,13 +2094,17 @@ class ViaConstructor:  # pylint: disable=R0904
                     table.setColumnCount(len(entry["columns"]))
                     if entry["selectable"]:
                         table.setColumnCount(len(entry["columns"]) + 1)
-                        table.setHorizontalHeaderItem(0, QTableWidgetItem("Select"))
+                        table.setHorizontalHeaderItem(
+                            0, QTableWidgetItem("Select")
+                        )
                         idxf_offset = 1
                     for col_idx, title in enumerate(entry["columns"]):
                         table.setHorizontalHeaderItem(
                             col_idx + idxf_offset, QTableWidgetItem(title)
                         )
-                    for row_idx, row in enumerate(self.project["setup"][sname][ename]):
+                    for row_idx, row in enumerate(
+                        self.project["setup"][sname][ename]
+                    ):
                         if entry["selectable"]:
                             button = QPushButton()
                             button.setIcon(
@@ -2066,7 +2189,10 @@ class ViaConstructor:  # pylint: disable=R0904
                 if not entry.get("per_object", False):
                     continue
 
-                if setup_data[sname][ename] != self.project["setup"][sname][ename]:
+                if (
+                    setup_data[sname][ename]
+                    != self.project["setup"][sname][ename]
+                ):
                     entry["widget_obj_label"].setStyleSheet("color: black")
                     changed_section = True
                 else:
@@ -2075,7 +2201,9 @@ class ViaConstructor:  # pylint: disable=R0904
                 if entry["type"] == "bool":
                     entry["widget_obj"].setChecked(setup_data[sname][ename])
                 elif entry["type"] == "select":
-                    entry["widget_obj"].setCurrentText(setup_data[sname][ename])
+                    entry["widget_obj"].setCurrentText(
+                        setup_data[sname][ename]
+                    )
                 elif entry["type"] == "float":
                     entry["widget_obj"].setValue(setup_data[sname][ename])
                 elif entry["type"] == "int":
@@ -2090,7 +2218,8 @@ class ViaConstructor:  # pylint: disable=R0904
 
                     if (
                         entry.get("column_defaults") is not None
-                        and str(setup_data[sname][ename][-1][first_element]) != ""
+                        and str(setup_data[sname][ename][-1][first_element])
+                        != ""
                     ):
                         new_row = {}
                         for key, default in entry["column_defaults"].items():
@@ -2103,7 +2232,9 @@ class ViaConstructor:  # pylint: disable=R0904
                     table.setColumnCount(len(entry["columns"]))
                     if entry["selectable"]:
                         table.setColumnCount(len(entry["columns"]) + 1)
-                        table.setHorizontalHeaderItem(0, QTableWidgetItem("Select"))
+                        table.setHorizontalHeaderItem(
+                            0, QTableWidgetItem("Select")
+                        )
                         idxf_offset = 1
                     for col_idx, title in enumerate(entry["columns"]):
                         table.setHorizontalHeaderItem(
@@ -2136,9 +2267,13 @@ class ViaConstructor:  # pylint: disable=R0904
                     log_warn(f"Unknown setup-type: {entry['type']}")
 
             if changed_section:
-                self.tabobjwidget.setTabText(tab_idx, f">{titles.get(sname, sname)}<")
+                self.tabobjwidget.setTabText(
+                    tab_idx, f">{titles.get(sname, sname)}<"
+                )
             else:
-                self.tabobjwidget.setTabText(tab_idx, f"{titles.get(sname, sname)}")
+                self.tabobjwidget.setTabText(
+                    tab_idx, f"{titles.get(sname, sname)}"
+                )
             tab_idx += 1
 
     def create_object_setup(self, tabwidget) -> None:
@@ -2176,7 +2311,9 @@ class ViaConstructor:  # pylint: disable=R0904
                 if entry["type"] == "bool":
                     checkbox = QCheckBox(entry.get("title", ename))
                     checkbox.setChecked(self.project["setup"][sname][ename])
-                    checkbox.setToolTip(entry.get("tooltip", f"{sname}/{ename}"))
+                    checkbox.setToolTip(
+                        entry.get("tooltip", f"{sname}/{ename}")
+                    )
                     checkbox.stateChanged.connect(self.object_changed)  # type: ignore
                     hlayout.addWidget(checkbox)
                     entry["widget_obj"] = checkbox
@@ -2184,8 +2321,12 @@ class ViaConstructor:  # pylint: disable=R0904
                     combobox = QComboBox()
                     for option in entry["options"]:
                         combobox.addItem(option[0])
-                    combobox.setCurrentText(self.project["setup"][sname][ename])
-                    combobox.setToolTip(entry.get("tooltip", f"{sname}/{ename}"))
+                    combobox.setCurrentText(
+                        self.project["setup"][sname][ename]
+                    )
+                    combobox.setToolTip(
+                        entry.get("tooltip", f"{sname}/{ename}")
+                    )
                     combobox.currentTextChanged.connect(self.object_changed)  # type: ignore
                     hlayout.addWidget(combobox)
                     entry["widget_obj"] = combobox
@@ -2205,7 +2346,9 @@ class ViaConstructor:  # pylint: disable=R0904
                     dspinbox.setMinimum(entry["min"])
                     dspinbox.setMaximum(entry["max"])
                     dspinbox.setValue(self.project["setup"][sname][ename])
-                    dspinbox.setToolTip(entry.get("tooltip", f"{sname}/{ename}"))
+                    dspinbox.setToolTip(
+                        entry.get("tooltip", f"{sname}/{ename}")
+                    )
                     dspinbox.valueChanged.connect(self.object_changed)  # type: ignore
                     hlayout.addWidget(dspinbox)
                     entry["widget_obj"] = dspinbox
@@ -2215,21 +2358,27 @@ class ViaConstructor:  # pylint: disable=R0904
                     spinbox.setMinimum(entry["min"])
                     spinbox.setMaximum(entry["max"])
                     spinbox.setValue(self.project["setup"][sname][ename])
-                    spinbox.setToolTip(entry.get("tooltip", f"{sname}/{ename}"))
+                    spinbox.setToolTip(
+                        entry.get("tooltip", f"{sname}/{ename}")
+                    )
                     spinbox.valueChanged.connect(self.object_changed)  # type: ignore
                     hlayout.addWidget(spinbox)
                     entry["widget_obj"] = spinbox
                 elif entry["type"] == "str":
                     lineedit = QLineEdit()
                     lineedit.setText(self.project["setup"][sname][ename])
-                    lineedit.setToolTip(entry.get("tooltip", f"{sname}/{ename}"))
+                    lineedit.setToolTip(
+                        entry.get("tooltip", f"{sname}/{ename}")
+                    )
                     lineedit.textChanged.connect(self.object_changed)  # type: ignore
                     hlayout.addWidget(lineedit)
                     entry["widget_obj"] = lineedit
                 elif entry["type"] == "mstr":
                     mlineedit = QPlainTextEdit()
                     mlineedit.setPlainText(self.project["setup"][sname][ename])
-                    mlineedit.setToolTip(entry.get("tooltip", f"{sname}/{ename}"))
+                    mlineedit.setToolTip(
+                        entry.get("tooltip", f"{sname}/{ename}")
+                    )
                     mlineedit.textChanged.connect(self.object_changed)  # type: ignore
                     hlayout.addWidget(mlineedit)
                     entry["widget_obj"] = mlineedit
@@ -2238,7 +2387,11 @@ class ViaConstructor:  # pylint: disable=R0904
                     first_element = list(entry["columns"].keys())[0]
                     if (
                         entry.get("column_defaults") is not None
-                        and str(self.project["setup"][sname][ename][-1][first_element])
+                        and str(
+                            self.project["setup"][sname][ename][-1][
+                                first_element
+                            ]
+                        )
                         != ""
                     ):
                         new_row = {}
@@ -2253,13 +2406,17 @@ class ViaConstructor:  # pylint: disable=R0904
                     table.setColumnCount(len(entry["columns"]))
                     if entry["selectable"]:
                         table.setColumnCount(len(entry["columns"]) + 1)
-                        table.setHorizontalHeaderItem(0, QTableWidgetItem("Select"))
+                        table.setHorizontalHeaderItem(
+                            0, QTableWidgetItem("Select")
+                        )
                         idxf_offset = 1
                     for col_idx, title in enumerate(entry["columns"]):
                         table.setHorizontalHeaderItem(
                             col_idx + idxf_offset, QTableWidgetItem(title)
                         )
-                    for row_idx, row in enumerate(self.project["setup"][sname][ename]):
+                    for row_idx, row in enumerate(
+                        self.project["setup"][sname][ename]
+                    ):
                         if entry["selectable"]:
                             button = QPushButton()
                             button.setIcon(
@@ -2389,7 +2546,10 @@ class ViaConstructor:  # pylint: disable=R0904
             center = points_to_center(object2points(object_active_obj))
 
             rotate_object(
-                object_active_obj, center[0], center[1], angle * math.pi / 180.0
+                object_active_obj,
+                center[0],
+                center[1],
+                angle * math.pi / 180.0,
             )
             if with_childs:
                 for inner in object_active_obj["inner_objects"]:
@@ -2454,9 +2614,13 @@ class ViaConstructor:  # pylint: disable=R0904
                     center = points_to_center(
                         object2points(self.project["objects"][inner])
                     )
-                    move_object(self.project["objects"][inner], -center[0], -center[1])
+                    move_object(
+                        self.project["objects"][inner], -center[0], -center[1]
+                    )
                     scale_object(self.project["objects"][inner], scale)
-                    move_object(self.project["objects"][inner], center[0], center[1])
+                    move_object(
+                        self.project["objects"][inner], center[0], center[1]
+                    )
 
             self.update_tabs_data()
             self.update_drawing()
@@ -2527,7 +2691,10 @@ class ViaConstructor:  # pylint: disable=R0904
             offset_y = 0
             if offset_direction == "left":
                 offset_x = (
-                    0 - (bounding_box[2] - bounding_box[0]) - bounding_box[0] - 10
+                    0
+                    - (bounding_box[2] - bounding_box[0])
+                    - bounding_box[0]
+                    - 10
                 )
             elif offset_direction == "right":
                 offset_x = (
@@ -2543,10 +2710,15 @@ class ViaConstructor:  # pylint: disable=R0904
                 )
             elif offset_direction == "bottom":
                 offset_y = (
-                    0 - (bounding_box[3] - bounding_box[1]) - bounding_box[1] - 10
+                    0
+                    - (bounding_box[3] - bounding_box[1])
+                    - bounding_box[1]
+                    - 10
                 )
 
-            new_obj_idx = clone_object(object_active_obj_idx, offset_x, offset_y)
+            new_obj_idx = clone_object(
+                object_active_obj_idx, offset_x, offset_y
+            )
             if new_obj_idx is not None and with_childs:
                 for inner in object_active_obj["inner_objects"]:
                     clone_object(inner, offset_x, offset_y)
@@ -2555,7 +2727,9 @@ class ViaConstructor:  # pylint: disable=R0904
             for idx in self.project["objects"]:
                 self.combobjwidget.addItem(idx.split(":")[0])
 
-            self.project["maxOuter"] = find_tool_offsets(self.project["objects"])
+            self.project["maxOuter"] = find_tool_offsets(
+                self.project["objects"]
+            )
 
             self.setup_select_object(new_obj_idx)
 
@@ -2640,11 +2814,17 @@ class ViaConstructor:  # pylint: disable=R0904
                             cmd = match[0].upper()
                             value = match[1]
                             if cmd == "MILL":
-                                obj["setup"]["mill"]["active"] = bool(value == "1")
+                                obj["setup"]["mill"]["active"] = bool(
+                                    value == "1"
+                                )
                             elif cmd in ("MILLDEPTH", "MD"):
-                                obj["setup"]["mill"]["depth"] = -abs(float(value))
+                                obj["setup"]["mill"]["depth"] = -abs(
+                                    float(value)
+                                )
                             elif cmd in ("SLICEDEPTH", "SD"):
-                                obj["setup"]["mill"]["step"] = -abs(float(value))
+                                obj["setup"]["mill"]["step"] = -abs(
+                                    float(value)
+                                )
                             elif cmd in ("FEEDXY", "FXY"):
                                 obj["setup"]["tool"]["rate_h"] = int(value)
                             elif cmd in ("FEEDZ", "FZ"):
@@ -2653,7 +2833,9 @@ class ViaConstructor:  # pylint: disable=R0904
         self.update_tabs_data()
         if not self.args.laser:
             debug("prepare_segments: find_tool_offsets")
-            self.project["maxOuter"] = find_tool_offsets(self.project["objects"])
+            self.project["maxOuter"] = find_tool_offsets(
+                self.project["objects"]
+            )
         debug("prepare_segments: done")
 
     def load_drawing(self, filename: str, no_setup: bool = False) -> bool:
@@ -2730,7 +2912,9 @@ class ViaConstructor:  # pylint: disable=R0904
 
         if self.project["draw_reader"]:
             debug("load_drawing: get segments")
-            self.project["segments_org"] = self.project["draw_reader"].get_segments()
+            self.project["segments_org"] = self.project[
+                "draw_reader"
+            ].get_segments()
             self.project["filename_draw"] = filename
             self.project[
                 "filename_machine_cmd"
@@ -2746,13 +2930,17 @@ class ViaConstructor:  # pylint: disable=R0904
                 self.project["setup"]["view"]["object_ids"] = False
                 self.project["setup"]["pockets"]["active"] = False
 
-            self.project["origin"] = objects2minmax(self.project["objects"])[0:2]
+            self.project["origin"] = objects2minmax(self.project["objects"])[
+                0:2
+            ]
 
             if self.combobjwidget is not None:
                 self.combobjwidget.clear()
                 for idx in self.project["objects"]:
                     self.combobjwidget.addItem(idx.split(":")[0])
-                self.combobjwidget.setCurrentText(self.project["object_active"])
+                self.combobjwidget.setCurrentText(
+                    self.project["object_active"]
+                )
 
             return True
 
@@ -2761,7 +2949,10 @@ class ViaConstructor:  # pylint: disable=R0904
         return False
 
     def open_preview_in_openscad(self):
-        if self.project["suffix"] in {"ngc", "gcode"} and self.project["machine_cmd"]:
+        if (
+            self.project["suffix"] in {"ngc", "gcode"}
+            and self.project["machine_cmd"]
+        ):
             parser = GcodeParser(self.project["machine_cmd"])
 
             diameter = None
@@ -2773,7 +2964,9 @@ class ViaConstructor:  # pylint: disable=R0904
                 return
 
             scad_data = parser.openscad(diameter)
-            open(f"{TEMP_PREFIX}viaconstructor-preview.scad", "w").write(scad_data)
+            open(f"{TEMP_PREFIX}viaconstructor-preview.scad", "w").write(
+                scad_data
+            )
 
             def openscad_show():
                 process = subprocess.Popen(
@@ -2791,14 +2984,16 @@ class ViaConstructor:  # pylint: disable=R0904
             threading.Thread(target=openscad_show).start()
 
     def open_preview_in_camotics(self):
-        if self.project["suffix"] in {"ngc", "gcode"} and self.project["machine_cmd"]:
+        if (
+            self.project["suffix"] in {"ngc", "gcode"}
+            and self.project["machine_cmd"]
+        ):
             units = "metric"
             if self.project["setup"]["machine"]["unit"] == "inch":
                 units = "imperial"
 
             tools = {}
             for obj in self.project["objects"].values():
-
                 diameter = None
                 for entry in self.project["setup"]["tool"]["tooltable"]:
                     if obj.setup["tool"]["number"] == entry["number"]:
@@ -2847,7 +3042,10 @@ class ViaConstructor:  # pylint: disable=R0904
             threading.Thread(target=camotics_show).start()
 
     def generate_preview(self):
-        if self.project["suffix"] in {"ngc", "gcode"} and self.project["machine_cmd"]:
+        if (
+            self.project["suffix"] in {"ngc", "gcode"}
+            and self.project["machine_cmd"]
+        ):
             parser = GcodeParser(self.project["machine_cmd"])
 
             diameter = None
@@ -2859,7 +3057,9 @@ class ViaConstructor:  # pylint: disable=R0904
                 return
 
             scad_data = parser.openscad(diameter)
-            open(f"{TEMP_PREFIX}viaconstructor-preview.scad", "w").write(scad_data)
+            open(f"{TEMP_PREFIX}viaconstructor-preview.scad", "w").write(
+                scad_data
+            )
 
             def openscad_convert():
                 os.system(
@@ -2878,7 +3078,7 @@ class ViaConstructor:  # pylint: disable=R0904
             threading.Thread(target=openscad_convert).start()
 
     def __init__(self, direct_args=[]) -> None:
-        """viaconstructor main init."""
+        """Viaconstructor main init."""
         debug("main: startup")
         setproctitle.setproctitle("viaconstructor")  # pylint: disable=I1101
 
@@ -2983,9 +3183,13 @@ class ViaConstructor:  # pylint: disable=R0904
         self.project["app"] = self
 
         if self.project["engine"] == "2D":
-            self.project["glwidget"] = CanvasWidget(self.project, self.update_drawing)
+            self.project["glwidget"] = CanvasWidget(
+                self.project, self.update_drawing
+            )
         else:
-            self.project["glwidget"] = GLWidget(self.project, self.update_drawing)
+            self.project["glwidget"] = GLWidget(
+                self.project, self.update_drawing
+            )
 
         self.project["imgwidget"] = QLabel()
         self.project["imgwidget"].setBackgroundRole(QPalette.Base)  # type: ignore
@@ -3025,20 +3229,30 @@ class ViaConstructor:  # pylint: disable=R0904
             preview_vbox = QVBoxLayout(preview)
             preview_vbox.setContentsMargins(0, 0, 0, 0)
             if openscad:
-                self.project["preview_generate"] = QPushButton(_("generate Preview"))
+                self.project["preview_generate"] = QPushButton(
+                    _("generate Preview")
+                )
                 self.project["preview_generate"].setToolTip(
                     _("this may take some time")
                 )
-                self.project["preview_generate"].pressed.connect(self.generate_preview)
+                self.project["preview_generate"].pressed.connect(
+                    self.generate_preview
+                )
                 preview_vbox.addWidget(self.project["preview_generate"])
-                self.project["preview_open"] = QPushButton(_("view in openscad"))
-                self.project["preview_open"].setToolTip(_("open's preview in openscad"))
+                self.project["preview_open"] = QPushButton(
+                    _("view in openscad")
+                )
+                self.project["preview_open"].setToolTip(
+                    _("open's preview in openscad")
+                )
                 self.project["preview_open"].pressed.connect(
                     self.open_preview_in_openscad
                 )
                 preview_vbox.addWidget(self.project["preview_open"])
             if camotics:
-                self.project["preview_open2"] = QPushButton(_("view in camotics"))
+                self.project["preview_open2"] = QPushButton(
+                    _("view in camotics")
+                )
                 self.project["preview_open2"].setToolTip(
                     _("open's preview in camotics")
                 )

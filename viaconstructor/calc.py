@@ -931,6 +931,7 @@ def do_pockets(  # pylint: disable=R0913
             )
             pocket_idx += 1
     elif HAVE_PYCLIPPER and obj.inner_objects and obj.setup["pockets"]["islands"]:
+        print("pocket")
         subjs = []
         vertex_data = vertex_data_cache(polyline)
         points = vertex2points(
