@@ -39,7 +39,6 @@ from .calc import (clean_segments, external_command, find_tool_offsets,
                    segments2objects)
 from .draw2d import CanvasWidget
 from .draw2d import draw_all as draw_all_2d
-from .fonttool import FontTool
 from .gldraw import GLWidget
 from .gldraw import draw_all as draw_all_gl
 from .log import log_dbg, log_error, log_warn
@@ -50,6 +49,8 @@ from .output_plugins.hpgl import PostProcessorHpgl
 from .preview_plugins.gcode import GcodeParser
 from .setupdefaults import setup_defaults
 from .vc_types import VcSegment
+from .tools.font import FontTool
+from .tools.gear import GearTool
 
 try:
     from .ext.nest2D.nest2D import (Box, Item, Point,  # pylint: disable=E0611
@@ -314,6 +315,9 @@ class ViaConstructor:  # pylint: disable=R0904
 
     def _toolbar_fonttool(self) -> None:
         self.font_tool.show()
+
+    def _toolbar_geartool(self) -> None:
+        self.gear_tool.show()
 
     def _toolbar_flipx(self) -> None:
         mirror_objects(
@@ -1818,6 +1822,18 @@ class ViaConstructor:  # pylint: disable=R0904
                 "Ctrl+F",
                 _("open fonttool"),
                 self._toolbar_fonttool,
+                False,
+                True,
+                False,
+                _("Tools"),
+                "exit",
+                None,
+            ],
+            _("Gear-Tool"): [
+                "gears.png",
+                "Ctrl+G",
+                _("open geartool"),
+                self._toolbar_geartool,
                 False,
                 True,
                 False,
@@ -3372,6 +3388,7 @@ class ViaConstructor:  # pylint: disable=R0904
 
         # Tools
         self.font_tool = FontTool(self)
+        self.gear_tool = GearTool(self)
 
         self.main.resize(1600, 1200)
         self.main.show()
