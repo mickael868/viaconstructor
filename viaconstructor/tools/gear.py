@@ -4,14 +4,8 @@ import ezdxf
 import numpy
 from PyQt5.QtCore import QLineF, QRect, Qt  # pylint: disable=E0611
 from PyQt5.QtGui import QPainter, QPen, QPixmap  # pylint: disable=E0611
-from PyQt5.QtWidgets import (  # pylint: disable=E0611
-    QDoubleSpinBox,
-    QLabel,
-    QPushButton,
-    QSpinBox,
-    QVBoxLayout,
-    QWidget,
-)
+from PyQt5.QtWidgets import (QDoubleSpinBox, QLabel,  # pylint: disable=E0611
+                             QPushButton, QSpinBox, QVBoxLayout, QWidget)
 from shapely.affinity import rotate, scale
 from shapely.geometry import MultiPoint, Point, box
 from shapely.ops import unary_union
@@ -57,7 +51,7 @@ def generate(
         ]
     )
 
-    outer_circle = Point(0.0, 0.0).buffer(outer_radius)
+    # outer_circle = Point(0.0, 0.0).buffer(outer_radius)
     # print(outer_circle)
 
     poly_list = []
@@ -265,10 +259,10 @@ class GearTool(QWidget):
             last = point
 
         square = QRect(
-            off_x - hole / 2 * scale,
-            off_y - hole / 2 * scale,
-            hole * scale,
-            hole * scale,
+            int(off_x - hole / 2 * scale),
+            int(off_y - hole / 2 * scale),
+            int(hole * scale),
+            int(hole * scale),
         )
         self.painter.drawEllipse(square)
 
